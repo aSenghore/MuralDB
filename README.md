@@ -1,4 +1,5 @@
-<img width="182" height="63" alt="image" src="https://github.com/user-attachments/assets/20d2c4c4-781e-4f77-b210-43bf96c9465c" />
+<img width="1131" height="214" alt="image" src="https://github.com/user-attachments/assets/8dd1e624-8ce5-4402-ab76-f1561021fa2b" />
+
 
 # Fall 2025
 ## :page_facing_up: Description
