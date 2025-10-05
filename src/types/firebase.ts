@@ -16,6 +16,7 @@ export interface FirebaseGallery {
   name: string;
   description: string;
   userId: string;
+  type: 'references' | 'art'; // Add type to distinguish gallery types
   images: FirebaseImage[];
   tags: string[];
   createdAt: Timestamp;
@@ -26,10 +27,12 @@ export interface FirebaseGallery {
 export interface FirebaseImage {
   id: string;
   name: string;
-  url: string;
+  downloadURL: string; // Changed from 'url' to 'downloadURL'
   storageRef: string;
   size: number;
   type: string;
+  galleryId: string; // Add galleryId reference
+  userId: string; // Add userId
   tags: string[];
   uploadedAt: Timestamp;
 }
@@ -37,7 +40,7 @@ export interface FirebaseImage {
 export interface FirebaseDocument {
   id: string;
   name: string;
-  url: string;
+  downloadURL: string; // Changed from 'url' to 'downloadURL'
   storageRef: string;
   size: number;
   type: string;
@@ -53,6 +56,7 @@ export interface FirebaseFolder {
   description?: string;
   userId: string;
   documents: string[]; // Document IDs
+  tags: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

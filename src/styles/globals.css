@@ -197,7 +197,7 @@ html {
   html {
     font-size: var(--font-size-mobile);
   }
-  
+
   /* Smaller text sizes for mobile */
   :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
     h1 {
@@ -290,120 +290,120 @@ html {
   .gallery-grid {
     gap: 0.5rem;
   }
-  
+
   /* Make gallery thumbnails much smaller */
   .gallery-thumbnail {
     min-height: 80px;
   }
-  
+
   .gallery-thumbnail .gallery-info {
     padding: 0.5rem;
   }
-  
+
   /* Ultra-compact gallery detail grid - 2 images per row */
   .gallery-detail-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
   }
-  
+
   /* Make image cards more compact */
   .gallery-image-card {
     border-radius: 0.375rem;
   }
-  
+
   .gallery-image-card .card-content {
     padding: 0;
   }
-  
+
   .gallery-image-card .image-info {
     padding: 0.375rem;
   }
-  
+
   /* Smaller document cards on mobile */
   .document-card {
     padding: 0.5rem;
   }
-  
+
   .document-grid {
     gap: 0.5rem;
   }
-  
+
   /* Ultra-compact folder thumbnails */
   .folder-thumbnail {
     min-height: 60px;
   }
-  
+
   /* Make document folder cards smaller */
   .document-folder-card {
     padding: 0.5rem;
   }
-  
+
   .document-folder-info {
     padding: 0.5rem 0 0 0;
   }
-  
+
   /* Smaller tag sizes on mobile */
   .mobile-tags .tag-badge {
     font-size: 0.625rem;
     padding: 0.125rem 0.25rem;
   }
-  
+
   /* More compact dialog content on mobile */
   .dialog-content-mobile {
     margin: 0.75rem;
     max-height: calc(100vh - 1.5rem);
   }
-  
+
   /* Ultra-compact buttons on mobile */
   .mobile-button {
     padding: 0.375rem 0.5rem;
     font-size: 0.75rem;
   }
-  
+
   /* Ultra-compact card spacing */
   .mobile-card {
     padding: 0.5rem;
   }
-  
+
   .mobile-card-header {
     padding-bottom: 0.25rem;
   }
-  
+
   /* Much smaller icons on mobile */
   .mobile-icon {
     width: 0.875rem;
     height: 0.875rem;
   }
-  
+
   /* Compact page headers on mobile */
   .mobile-page-header {
     margin-bottom: 1rem;
     gap: 0.5rem;
   }
-  
+
   .mobile-page-title {
     font-size: 1.25rem;
     line-height: 1.3;
   }
-  
+
   .mobile-page-description {
     font-size: 0.75rem;
     line-height: 1.3;
     margin-top: 0.25rem;
   }
-  
+
   /* Compact button groups on mobile */
   .mobile-button-group {
     gap: 0.25rem;
   }
-  
+
   /* Smaller hover buttons in image cards */
   .mobile-hover-button {
     width: 1.5rem;
     height: 1.5rem;
     padding: 0;
   }
-  
+
   .mobile-hover-button svg {
     width: 0.75rem;
     height: 0.75rem;

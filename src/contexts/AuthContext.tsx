@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
+import {
   User as FirebaseAuthUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -8,10 +8,10 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { 
-  doc, 
-  setDoc, 
-  getDoc, 
+import {
+  doc,
+  setDoc,
+  getDoc,
   updateDoc,
   query,
   where,
@@ -38,7 +38,6 @@ interface AuthContextType {
   signin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (userData: Partial<User>) => Promise<void>;
-  checkScreenNameExists: (screenName: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -71,15 +70,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign up new user
   const signup = async (email: string, password: string, firstName: string, lastName: string, screenName: string) => {
     try {
-      // Check if screen name already exists
-      const screenNameExists = await checkScreenNameExists(screenName);
-      if (screenNameExists) {
-        throw new Error('Screen name already exists. Please choose a different one.');
-      }
+      // Note: Screen name uniqueness check has been removed due to Firebase Security Rules
+      // requiring authentication to query users collection. Screen names are unique per user ID.
 
-      // Create Firebase auth user
+      // Create Firebase auth user (this automatically signs them in)
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       // Update Firebase auth profile
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`
@@ -97,7 +93,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
 
       await setDoc(doc(db, 'users', user.uid), userData);
-      
+
+      // Immediately set the current user state so they're signed in right away
+      setCurrentUser({
+        uid: user.uid,
+        email: user.email!,
+        firstName,
+        lastName,
+        screenName
+      });
+
     } catch (error: any) {
       console.error('Signup error:', error);
       throw error;
@@ -196,13 +201,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signup,
     signin,
     logout,
-    updateUserProfile,
-    checkScreenNameExists
+    updateUserProfile
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={value}>
+        {!loading && children}
+      </AuthContext.Provider>
   );
 }

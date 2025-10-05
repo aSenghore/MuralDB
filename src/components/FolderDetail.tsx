@@ -1,182 +1,178 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { PDFViewer } from './PDFViewer';
 import { FileUpload } from './FileUpload';
 import { TagManager } from './TagManager';
 import { TagFilter } from './TagFilter';
 import { ItemTags } from './ItemTags';
-import { useUploads } from './UploadContext';
 import { useTagContext } from './TagContext';
-import { ArrowLeft, Download, Upload, Plus, File, Edit3, Check, X, Eye, Trash2, Tag } from 'lucide-react';
+import { ArrowLeft, Download, Upload, Plus, File, Edit3, Check, X, Eye, Trash2, Tag, Loader2 } from 'lucide-react';
 import { FileIcon, getFileTypeFromName } from './FileIcon';
+import { documentService } from '../services/firebaseService';
+import { FirebaseFolder, FirebaseDocument } from '../types/firebase';
+import { toast } from 'sonner';
 
-interface Document {
-  id: string;
-  name: string;
-  type: string;
-  url: string;
-  size: string;
-  uploadDate: string;
+interface User {
+  uid: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  screenName: string;
+  profilePicture?: string;
 }
 
 interface FolderDetailProps {
   folderId: string;
   onNavigate: (page: string) => void;
-  onFolderUpdate?: (folderId: string, name: string, description: string) => void;
+  user: User | null;
 }
 
-export function FolderDetail({ folderId, onNavigate, onFolderUpdate }: FolderDetailProps) {
-  const { addUpload } = useUploads();
-  const { getItemsByTags } = useTagContext();
+export function FolderDetail({ folderId, onNavigate, user }: FolderDetailProps) {
+  const { getItemsByTags, syncItemTags } = useTagContext();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  
-  // Mock folder data - in a real app this would come from props or state management
-  const [folderData, setFolderData] = useState({
-    id: folderId,
-    name: folderId === '1' ? 'Design Specs' : folderId === '2' ? 'Project Proposals' : 'Research',
-    description: folderId === '1' ? 'Technical specifications and design documents' : 
-                 folderId === '2' ? 'Client proposals and project documentation' : 
-                 'Market research and user studies',
-    documents: folderId === '1' ? [
-      { id: '1', name: 'UI Guidelines.pdf', type: 'pdf', url: '/mock-doc.pdf', size: '2.1 MB', uploadDate: '2024-01-15' },
-      { id: '2', name: 'Brand Manual.pdf', type: 'pdf', url: '/mock-doc.pdf', size: '5.3 MB', uploadDate: '2024-01-10' },
-      { id: '3', name: 'Color Palette.pdf', type: 'pdf', url: '/mock-doc.pdf', size: '1.2 MB', uploadDate: '2024-01-08' },
-      { id: '4', name: 'Typography Guide.pdf', type: 'pdf', url: '/mock-doc.pdf', size: '3.8 MB', uploadDate: '2024-01-05' },
-    ] : folderId === '2' ? [
-      { id: '5', name: 'Q4 Campaign.docx', type: 'docx', url: '/mock-doc.docx', size: '4.2 MB', uploadDate: '2024-02-01' },
-      { id: '6', name: 'Brand Refresh.pptx', type: 'pptx', url: '/mock-doc.pptx', size: '12.7 MB', uploadDate: '2024-01-28' },
-      { id: '7', name: 'Budget Analysis.xlsx', type: 'xlsx', url: '/mock-doc.xlsx', size: '890 KB', uploadDate: '2024-01-25' },
-    ] : [
-      { id: '8', name: 'User Survey Results.pdf', type: 'pdf', url: '/mock-doc.pdf', size: '6.1 MB', uploadDate: '2024-02-10' },
-      { id: '9', name: 'Competitor Analysis.pdf', type: 'pdf', url: '/mock-doc.pdf', size: '8.3 MB', uploadDate: '2024-02-05' },
-    ]
-  });
-
-  const [documents, setDocuments] = useState<Document[]>(folderData.documents);
+  const [folder, setFolder] = useState<FirebaseFolder | null>(null);
+  const [documents, setDocuments] = useState<FirebaseDocument[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [editName, setEditName] = useState(folderData.name);
-  const [editDescription, setEditDescription] = useState(folderData.description);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<FirebaseDocument | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const getFileIcon = (type: string) => {
-    return <FileIcon fileType={type} className="h-8 w-8" />;
+  // Load folder and documents
+  useEffect(() => {
+    if (user) {
+      loadFolderAndDocuments();
+    }
+  }, [folderId, user]);
+
+  const loadFolderAndDocuments = async () => {
+    if (!user) return;
+
+    try {
+      const [userFolders, userDocuments] = await Promise.all([
+        documentService.getUserFolders(user.uid),
+        documentService.getUserDocuments(user.uid)
+      ]);
+
+      const currentFolder = userFolders.find(f => f.id === folderId);
+      if (currentFolder) {
+        setFolder(currentFolder);
+        setEditName(currentFolder.name);
+        setEditDescription(currentFolder.description || '');
+
+        // Sync folder tags
+        if (currentFolder.tags) {
+          syncItemTags(currentFolder.id, 'folder', currentFolder.tags);
+        }
+
+        // Get documents for this folder
+        const folderDocs = userDocuments.filter(doc => doc.folderId === folderId);
+        setDocuments(folderDocs);
+
+        // Sync document tags
+        folderDocs.forEach(doc => {
+          if (doc.tags) {
+            syncItemTags(doc.id, 'document', doc.tags);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading folder:', error);
+      toast.error('Failed to load folder');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const handleUpload = async (files: File[]) => {
+    if (!user || !folder) return;
+
+    setIsUploading(true);
+    try {
+      for (const file of files) {
+        await documentService.uploadDocument(user.uid, file, folderId, []);
+      }
+
+      await loadFolderAndDocuments();
+      setIsUploadDialogOpen(false);
+      toast.success('Documents uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      toast.error('Failed to upload documents');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      await documentService.deleteDocument(documentId);
+      await loadFolderAndDocuments();
+      toast.success('Document deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast.error('Failed to delete document');
+    }
+  };
+
+  const handleTitleSave = async () => {
+    if (!folder || !editName.trim()) return;
+
+    try {
+      await documentService.updateFolder(folderId, { name: editName.trim() });
+      await loadFolderAndDocuments();
+      setIsEditingTitle(false);
+      toast.success('Folder name updated!');
+    } catch (error) {
+      console.error('Error updating folder name:', error);
+      toast.error('Failed to update folder name');
+    }
+  };
+
+  const handleDescriptionSave = async () => {
+    if (!folder) return;
+
+    try {
+      await documentService.updateFolder(folderId, { description: editDescription.trim() });
+      await loadFolderAndDocuments();
+      setIsEditingDescription(false);
+      toast.success('Description updated!');
+    } catch (error) {
+      console.error('Error updating description:', error);
+      toast.error('Failed to update description');
+    }
+  };
+
+  const formatDate = (timestamp: any) => {
+    return timestamp.toDate().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
   };
 
-  const handleUpload = (files: File[]) => {
-    files.forEach(file => {
-      const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
-      const size = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-      
-      // Add to documents list
-      const newDoc: Document = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        type: fileExtension,
-        url: URL.createObjectURL(file),
-        size,
-        uploadDate: new Date().toISOString().split('T')[0]
-      };
-      setDocuments(prev => [...prev, newDoc]);
-
-      // Track in upload context
-      const uploadedFile = {
-        id: newDoc.id,
-        name: file.name,
-        type: 'document' as const,
-        fileType: fileExtension,
-        url: newDoc.url,
-        size,
-        uploadDate: new Date().toISOString(),
-        location: `Documents > ${folderData.name}`
-      };
-      addUpload(uploadedFile);
-    });
-    
-    setIsUploadDialogOpen(false);
-  };
-
-  const handleNameSave = () => {
-    if (editName.trim()) {
-      const updatedFolder = { ...folderData, name: editName.trim() };
-      setFolderData(updatedFolder);
-      if (onFolderUpdate) {
-        onFolderUpdate(folderId, editName.trim(), folderData.description);
-      }
-    }
-    setIsEditingTitle(false);
-  };
-
-  const handleNameCancel = () => {
-    setEditName(folderData.name);
-    setIsEditingTitle(false);
-  };
-
-  const handleDescriptionSave = () => {
-    const updatedFolder = { ...folderData, description: editDescription.trim() };
-    setFolderData(updatedFolder);
-    if (onFolderUpdate) {
-      onFolderUpdate(folderId, folderData.name, editDescription.trim());
-    }
-    setIsEditingDescription(false);
-  };
-
-  const handleDescriptionCancel = () => {
-    setEditDescription(folderData.description);
-    setIsEditingDescription(false);
-  };
-
-  const handleDocumentClick = (document: Document) => {
-    setSelectedDocument(document);
-    setViewerOpen(true);
-  };
-
-  const handleDocumentRename = (newName: string) => {
-    if (selectedDocument) {
-      const updatedDocuments = documents.map(doc =>
-        doc.id === selectedDocument.id
-          ? { ...doc, name: newName }
-          : doc
-      );
-      setDocuments(updatedDocuments);
-      setSelectedDocument({ ...selectedDocument, name: newName });
-    }
-  };
-
-  const handleDocumentDelete = () => {
-    if (selectedDocument) {
-      const updatedDocuments = documents.filter(doc => doc.id !== selectedDocument.id);
-      setDocuments(updatedDocuments);
-      setSelectedDocument(null);
-      setViewerOpen(false);
-    }
-  };
-
-  const handleDocumentDeleteDirect = (docId: string) => {
-    const updatedDocuments = documents.filter(doc => doc.id !== docId);
-    setDocuments(updatedDocuments);
+  const formatFileSize = (bytes: number) => {
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return '0 Bytes';
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const handleTagToggle = (tagId: string) => {
-    setSelectedTagIds(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
+    setSelectedTagIds(prev =>
+        prev.includes(tagId)
+            ? prev.filter(id => id !== tagId)
+            : [...prev, tagId]
     );
   };
 
@@ -184,225 +180,319 @@ export function FolderDetail({ folderId, onNavigate, onFolderUpdate }: FolderDet
     setSelectedTagIds([]);
   };
 
+  const handleViewDocument = (doc: FirebaseDocument) => {
+    setSelectedDocument(doc);
+    setViewerOpen(true);
+  };
+
+  const handleDownload = (doc: FirebaseDocument) => {
+    const link = document.createElement('a');
+    link.href = doc.downloadURL;
+    link.download = doc.name;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Filter documents based on selected tags
-  const filteredDocuments = selectedTagIds.length > 0 
-    ? documents.filter(doc => {
-        const taggedDocuments = getItemsByTags(selectedTagIds, 'document');
-        return taggedDocuments.some(taggedDoc => taggedDoc.id === doc.id);
-      })
-    : documents;
+  const filteredDocuments = selectedTagIds.length > 0
+      ? documents.filter(doc =>
+          doc.tags && doc.tags.some(tag => selectedTagIds.includes(tag))
+      )
+      : documents;
+
+  if (!user) {
+    return (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Please sign in to view folder details.</p>
+        </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+        <div className="text-center py-12">
+          <Loader2 className="h-8 w-8 mx-auto animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading folder...</p>
+        </div>
+    );
+  }
+
+  if (!folder) {
+    return (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Folder not found.</p>
+          <Button onClick={() => onNavigate('documents')} className="mt-4">
+            Back to Documents
+          </Button>
+        </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          onClick={() => onNavigate('documents')}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Documents
-        </Button>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-medium text-foreground">{folderData.name}</h1>
-          <p className="text-muted-foreground mt-2">{folderData.description}</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {documents.length} document{documents.length !== 1 ? 's' : ''}
-            {filteredDocuments.length !== documents.length && (
-              <span> • {filteredDocuments.length} shown</span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <TagManager>
-            <Button variant="outline" size="sm">
-              <Tag className="h-4 w-4 mr-2" />
-              Manage Tags
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => onNavigate('documents')} className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back
             </Button>
-          </TagManager>
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Upload className="h-4 w-4" />
-                Upload Document
+
+            <div>
+              {isEditingTitle ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="h-9"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleTitleSave();
+                          } else if (e.key === 'Escape') {
+                            setEditName(folder.name);
+                            setIsEditingTitle(false);
+                          }
+                        }}
+                        autoFocus
+                    />
+                    <Button size="sm" variant="ghost" onClick={handleTitleSave}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditName(folder.name);
+                          setIsEditingTitle(false);
+                        }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+              ) : (
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-3xl font-medium">{folder.name}</h1>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsEditingTitle(true)}
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                  </div>
+              )}
+
+              {isEditingDescription ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Input
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        placeholder="Add a description..."
+                        className="h-8"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleDescriptionSave();
+                          } else if (e.key === 'Escape') {
+                            setEditDescription(folder.description || '');
+                            setIsEditingDescription(false);
+                          }
+                        }}
+                        autoFocus
+                    />
+                    <Button size="sm" variant="ghost" onClick={handleDescriptionSave}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditDescription(folder.description || '');
+                          setIsEditingDescription(false);
+                        }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+              ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-muted-foreground">
+                      {folder.description || 'No description'}
+                    </p>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsEditingDescription(true)}
+                        className="h-6 w-6 p-0"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <TagManager>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Tag className="h-4 w-4" />
+                Tags
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Upload Document</DialogTitle>
-                <DialogDescription>
-                  Add a new document to the {folderData.name} folder
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <FileUpload 
-                  onFilesUploaded={handleUpload}
-                  type="document"
-                  multiple={true}
+            </TagManager>
+            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Documents
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload Documents</DialogTitle>
+                  <DialogDescription>
+                    Upload documents to this folder
+                  </DialogDescription>
+                </DialogHeader>
+                <FileUpload
+                    onFilesUploaded={handleUpload}
+                    type="document"
+                    multiple={true}
                 />
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+                {isUploading && (
+                    <div className="text-center py-4">
+                      <Loader2 className="h-6 w-6 mx-auto animate-spin mb-2" />
+                      <p className="text-sm text-muted-foreground">Uploading...</p>
+                    </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      </div>
 
-      <TagFilter
-        selectedTags={selectedTagIds}
-        onTagToggle={handleTagToggle}
-        onClearFilter={handleClearTagFilter}
-        itemType="document"
-      />
+        <TagFilter
+            selectedTags={selectedTagIds}
+            onTagToggle={handleTagToggle}
+            onClearFilter={handleClearTagFilter}
+            itemType="document"
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredDocuments.map((doc) => (
-          <Card 
-            key={doc.id}
-            className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 group relative"
-            onClick={() => handleDocumentClick(doc)}
-          >
-            <CardContent className="p-4">
-              <div className="w-full h-32 bg-muted rounded-lg border flex items-center justify-center mb-4 relative">
-                {getFileIcon(doc.type)}
-                
-                {/* Document Tags */}
-                <div className="absolute top-2 left-2">
-                  <ItemTags 
-                    itemId={doc.id} 
-                    itemType="document" 
-                    size="sm"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-medium text-sm truncate" title={doc.name}>
-                  {doc.name}
-                </h3>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{doc.size}</span>
-                  <span>{formatDate(doc.uploadDate)}</span>
-                </div>
-                
-                {/* Add Tags Button */}
-                <div className="mt-2">
-                  <ItemTags 
-                    itemId={doc.id} 
-                    itemType="document" 
-                    showAddButton={true}
-                    size="sm"
-                  />
-                </div>
-              </div>
-            </CardContent>
-            
-            {/* Hover controls */}
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDocumentClick(doc);
-                }}
-                className="h-8 w-8 p-0"
-                title="View document"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDocumentDeleteDirect(doc.id);
-                }}
-                className="h-8 w-8 p-0"
-                title="Delete document"
-              >
-                <Trash2 className="h-4 w-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredDocuments.map((doc) => (
+              <Card key={doc.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center h-32 bg-muted rounded-lg mb-3">
+                    <FileIcon fileType={getFileTypeFromName(doc.name)} className="h-12 w-12" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-medium truncate" title={doc.name}>
+                      {doc.name}
+                    </h3>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{formatFileSize(doc.size)}</span>
+                      <span>{formatDate(doc.uploadedAt)}</span>
+                    </div>
+
+                    <ItemTags itemId={doc.id} itemType="document" />
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={() => handleViewDocument(doc)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
+                      <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={() => handleDownload(doc)}
+                      >
+                        <Download className="h-4 w-4" />
+                        Download
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{doc.name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={() => handleDeleteDocument(doc.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          ))}
+        </div>
+
+        {filteredDocuments.length === 0 && selectedTagIds.length > 0 && (
+            <div className="text-center py-12">
+              <File className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No documents match your tag filter</h3>
+              <p className="text-muted-foreground mb-4">
+                Try adjusting your tag selection to see more documents
+              </p>
+              <Button onClick={handleClearTagFilter} variant="outline">
+                Clear Filter
               </Button>
             </div>
-            
-            <div className="px-4 pb-4">
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDocumentClick(doc);
-                  }}
-                >
-                  <Eye className="h-3 w-3" />
-                  View
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Handle download
-                    const link = document.createElement('a');
-                    link.href = doc.url;
-                    link.download = doc.name;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                >
-                  <Download className="h-3 w-3" />
-                  Download
-                </Button>
-              </div>
+        )}
+
+        {documents.length === 0 && (
+            <div className="text-center py-12">
+              <File className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No documents yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Upload documents to this folder to get started
+              </p>
+              <Button onClick={() => setIsUploadDialogOpen(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                Upload Documents
+              </Button>
             </div>
-          </Card>
-        ))}
+        )}
+
+        {selectedDocument && (
+            <PDFViewer
+                document={{
+                  id: selectedDocument.id,
+                  name: selectedDocument.name,
+                  type: getFileTypeFromName(selectedDocument.name),
+                  url: selectedDocument.downloadURL,
+                  size: formatFileSize(selectedDocument.size),
+                  uploadDate: selectedDocument.uploadedAt.toDate().toISOString()
+                }}
+                isOpen={viewerOpen}
+                onClose={() => {
+                  setViewerOpen(false);
+                  setSelectedDocument(null);
+                }}
+            />
+        )}
       </div>
-
-      {filteredDocuments.length === 0 && selectedTagIds.length > 0 && (
-        <div className="text-center py-12">
-          <FileIcon fileType="document" className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No documents match your tag filter</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your tag selection to see more documents
-          </p>
-          <Button onClick={handleClearTagFilter} variant="outline">
-            Clear Filter
-          </Button>
-        </div>
-      )}
-
-      {documents.length === 0 && (
-        <div className="text-center py-12">
-          <FileIcon fileType="document" className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No documents yet</h3>
-          <p className="text-muted-foreground mb-4">
-            Upload your first document to this folder
-          </p>
-          <Button onClick={() => setIsUploadDialogOpen(true)} className="gap-2">
-            <Upload className="h-4 w-4" />
-            Upload Documents
-          </Button>
-        </div>
-      )}
-
-      {/* PDF Viewer */}
-      <PDFViewer
-        document={selectedDocument}
-        isOpen={viewerOpen}
-        onClose={() => setViewerOpen(false)}
-        onDocumentRename={handleDocumentRename}
-        onDocumentDelete={handleDocumentDelete}
-      />
-    </div>
   );
 }

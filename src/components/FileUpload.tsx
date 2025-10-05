@@ -11,13 +11,13 @@ interface FileUploadProps {
   className?: string;
 }
 
-export function FileUpload({ 
-  onFilesUploaded, 
-  accept = "image/*", 
-  multiple = true, 
-  type = 'image',
-  className = ""
-}: FileUploadProps) {
+export function FileUpload({
+                             onFilesUploaded,
+                             accept = "image/*",
+                             multiple = true,
+                             type = 'image',
+                             className = ""
+                           }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getAcceptString = () => {
@@ -85,43 +85,43 @@ export function FileUpload({
   };
 
   return (
-    <div className={className}>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={getAcceptString()}
-        multiple={multiple}
-        onChange={handleFileChange}
-        className="hidden"
-      />
-      
-      <div
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors"
-      >
-        <div className="flex flex-col items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-full">
-            {getIcon()}
-          </div>
-          <div>
-            <p className="font-medium mb-1">Drop files here or click to browse</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              {type === 'image' && 'Supports JPG, PNG, GIF, WebP'}
-              {type === 'document' && 'Supports PDF, DOC, DOCX, TXT'}
-              {type === 'both' && 'Supports images and documents'}
-            </p>
-            <Button
-              onClick={handleClick}
-              variant="outline"
-              className="gap-2"
-            >
+      <div className={className}>
+        <input
+            ref={fileInputRef}
+            type="file"
+            accept={getAcceptString()}
+            multiple={multiple}
+            onChange={handleFileChange}
+            className="hidden"
+        />
+
+        <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors"
+        >
+          <div className="flex flex-col items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-full">
               {getIcon()}
-              {getButtonText()}
-            </Button>
+            </div>
+            <div>
+              <p className="font-medium mb-1">Drop files here or click to browse</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {type === 'image' && 'Supports JPG, PNG, GIF, WebP'}
+                {type === 'document' && 'Supports PDF, DOC, DOCX, TXT'}
+                {type === 'both' && 'Supports images and documents'}
+              </p>
+              <Button
+                  onClick={handleClick}
+                  variant="outline"
+                  className="gap-2"
+              >
+                {getIcon()}
+                {getButtonText()}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
   );
 }

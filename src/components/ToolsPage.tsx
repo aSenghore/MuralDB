@@ -5,8 +5,16 @@ import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
-import { Shuffle, Copy, RefreshCw, Sparkles, Wand2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { Shuffle, Copy, RefreshCw, Sparkles, Wand2, Palette, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { PalettePicker } from './PalettePicker';
 
 interface PromptOptions {
   genre: boolean;
@@ -33,6 +41,13 @@ interface GeneratedPrompt {
 }
 
 export function ToolsPage() {
+  const [activeTab, setActiveTab] = useState('character-prompt');
+
+  const tabs = [
+    { id: 'character-prompt', label: 'Character Prompt', icon: <Sparkles className="h-4 w-4" /> },
+    { id: 'palette-picker', label: 'Palette Picker', icon: <Palette className="h-4 w-4" /> },
+  ];
+
   const [promptOptions, setPromptOptions] = useState<PromptOptions>({
     genre: true,
     hairColor: true,
@@ -125,7 +140,7 @@ export function ToolsPage() {
 
   const generatePrompt = async () => {
     setIsGenerating(true);
-    
+
     // Add a small delay for better UX
     await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -147,8 +162,8 @@ export function ToolsPage() {
     if (!generatedPrompt) return;
 
     const promptText = Object.entries(generatedPrompt)
-      .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
-      .join('\n');
+        .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+        .join('\n');
 
     navigator.clipboard.writeText(promptText).then(() => {
       toast.success('Prompt copied to clipboard!');
@@ -190,175 +205,225 @@ export function ToolsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Page Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-medium text-foreground flex items-center justify-center gap-2">
-          <Wand2 className="h-8 w-8 text-primary" />
-          Creative Tools
-        </h1>
-        <p className="text-muted-foreground">
-          Generate random character design prompts to spark your creativity
-        </p>
-      </div>
+      <div className="space-y-6 max-w-4xl mx-auto">
+        {/* Page Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-medium text-foreground flex items-center justify-center gap-2">
+            <Wand2 className="h-8 w-8 text-primary" />
+            Creative Tools
+          </h1>
+          <p className="text-muted-foreground">
+            Tools to spark your creativity and streamline your workflow
+          </p>
+        </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Generator Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Character Prompt Generator
-            </CardTitle>
-            <CardDescription>
-              Toggle the elements you want to include in your character prompt
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Quick Actions */}
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={enableAllOptions}>
-                Enable All
-              </Button>
-              <Button variant="outline" size="sm" onClick={disableAllOptions}>
-                Disable All
-              </Button>
-            </div>
-
-            <Separator />
-
-            {/* Toggle Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(promptOptions).map(([key, enabled]) => (
-                <div key={key} className="flex items-center justify-between space-x-2">
-                  <Label htmlFor={key} className="text-sm font-medium cursor-pointer">
-                    {formatKey(key)}
-                  </Label>
-                  <Switch
-                    id={key}
-                    checked={enabled}
-                    onCheckedChange={() => handleOptionToggle(key as keyof PromptOptions)}
-                  />
-                </div>
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Desktop Tabs */}
+          <div className="hidden md:block">
+            <TabsList className="grid w-full grid-cols-2">
+              {tabs.map((tab) => (
+                  <TabsTrigger key={tab.id} value={tab.id} className="gap-2">
+                    {tab.icon}
+                    {tab.label}
+                  </TabsTrigger>
               ))}
-            </div>
+            </TabsList>
+          </div>
 
-            <Separator />
+          {/* Mobile Dropdown */}
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                <span className="flex items-center gap-2">
+                  {tabs.find(tab => tab.id === activeTab)?.icon}
+                  {tabs.find(tab => tab.id === activeTab)?.label}
+                </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-full">
+                {tabs.map((tab) => (
+                    <DropdownMenuItem
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className="gap-2"
+                    >
+                      {tab.icon}
+                      {tab.label}
+                    </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-            {/* Generate Button */}
-            <Button 
-              onClick={generatePrompt} 
-              className="w-full" 
-              size="lg"
-              disabled={isGenerating || Object.values(promptOptions).every(v => !v)}
-            >
-              {isGenerating ? (
-                <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-              ) : (
-                <Shuffle className="h-5 w-5 mr-2" />
-              )}
-              {isGenerating ? 'Generating...' : 'Generate Character Prompt'}
-            </Button>
+          {/* Character Prompt Tab */}
+          <TabsContent value="character-prompt" className="mt-6">
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Generator Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    Character Prompt Generator
+                  </CardTitle>
+                  <CardDescription>
+                    Toggle the elements you want to include in your character prompt
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Quick Actions */}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={enableAllOptions}>
+                      Enable All
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={disableAllOptions}>
+                      Disable All
+                    </Button>
+                  </div>
 
-            {Object.values(promptOptions).every(v => !v) && (
-              <p className="text-sm text-muted-foreground text-center">
-                Enable at least one option to generate a prompt
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                  <Separator />
 
-        {/* Generated Prompt Display */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Generated Character Prompt</CardTitle>
-            <CardDescription>
-              Your randomized character design elements
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {generatedPrompt ? (
-              <>
-                <div className="space-y-3">
-                  {Object.entries(generatedPrompt).map(([key, value]) => (
-                    <div key={key} className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {formatKey(key)}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-foreground pl-1">
-                        {value}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                  {/* Toggle Options */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {Object.entries(promptOptions).map(([key, enabled]) => (
+                        <div key={key} className="flex items-center justify-between space-x-2">
+                          <Label htmlFor={key} className="text-sm font-medium cursor-pointer">
+                            {formatKey(key)}
+                          </Label>
+                          <Switch
+                              id={key}
+                              checked={enabled}
+                              onCheckedChange={() => handleOptionToggle(key as keyof PromptOptions)}
+                          />
+                        </div>
+                    ))}
+                  </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={copyPromptToClipboard}
-                    className="flex-1"
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Prompt
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={generatePrompt}
-                    disabled={isGenerating}
+                  {/* Generate Button */}
+                  <Button
+                      onClick={generatePrompt}
+                      className="w-full"
+                      size="lg"
+                      disabled={isGenerating || Object.values(promptOptions).every(v => !v)}
                   >
                     {isGenerating ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
+                        <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
                     ) : (
-                      <Shuffle className="h-4 w-4" />
+                        <Shuffle className="h-5 w-5 mr-2" />
                     )}
+                    {isGenerating ? 'Generating...' : 'Generate Character Prompt'}
                   </Button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8 space-y-3">
-                <div className="text-muted-foreground">
-                  <Wand2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No prompt generated yet</p>
-                  <p className="text-sm">Click "Generate Character Prompt" to create one</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Tips and Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>How to Use</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-6 text-sm">
-            <div className="space-y-2">
-              <h4 className="font-medium">Getting Started</h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Toggle on/off any character elements you want</li>
-                <li>• Click "Generate Character Prompt" to create a random character</li>
-                <li>• Use the "Copy Prompt" button to save your results</li>
-                <li>• Generate new prompts until you find inspiration</li>
-              </ul>
+                  {Object.values(promptOptions).every(v => !v) && (
+                      <p className="text-sm text-muted-foreground text-center">
+                        Enable at least one option to generate a prompt
+                      </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Generated Prompt Display */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Generated Character Prompt</CardTitle>
+                  <CardDescription>
+                    Your randomized character design elements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {generatedPrompt ? (
+                      <>
+                        <div className="space-y-3">
+                          {Object.entries(generatedPrompt).map(([key, value]) => (
+                              <div key={key} className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {formatKey(key)}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-foreground pl-1">
+                                  {value}
+                                </p>
+                              </div>
+                          ))}
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex gap-2">
+                          <Button
+                              variant="outline"
+                              onClick={copyPromptToClipboard}
+                              className="flex-1"
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy Prompt
+                          </Button>
+                          <Button
+                              variant="outline"
+                              onClick={generatePrompt}
+                              disabled={isGenerating}
+                          >
+                            {isGenerating ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Shuffle className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </>
+                  ) : (
+                      <div className="text-center py-8 space-y-3">
+                        <div className="text-muted-foreground">
+                          <Wand2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p>No prompt generated yet</p>
+                          <p className="text-sm">Click "Generate Character Prompt" to create one</p>
+                        </div>
+                      </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-medium">Tips for Artists</h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Try different combinations of enabled elements</li>
-                <li>• Use prompts as starting points for your own ideas</li>
-                <li>• Mix and match elements from multiple generations</li>
-                <li>• Don't be afraid to modify the generated suggestions</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+
+            {/* Tips and Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>How to Use</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6 text-sm">
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Getting Started</h4>
+                    <ul className="space-y-1 text-muted-foreground">
+                      <li>• Toggle on/off any character elements you want</li>
+                      <li>• Click "Generate Character Prompt" to create a random character</li>
+                      <li>• Use the "Copy Prompt" button to save your results</li>
+                      <li>• Generate new prompts until you find inspiration</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Tips for Artists</h4>
+                    <ul className="space-y-1 text-muted-foreground">
+                      <li>• Try different combinations of enabled elements</li>
+                      <li>• Use prompts as starting points for your own ideas</li>
+                      <li>• Mix and match elements from multiple generations</li>
+                      <li>• Don't be afraid to modify the generated suggestions</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Palette Picker Tab */}
+          <TabsContent value="palette-picker" className="mt-6">
+            <PalettePicker />
+          </TabsContent>
+        </Tabs>
+      </div>
   );
 }

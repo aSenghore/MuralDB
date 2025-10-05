@@ -55,24 +55,22 @@ function AppContent() {
       case 'resources':
         return <ResourcesPage />;
       case 'folder-detail':
-        let element = selectedFolderId ? (
+        return selectedFolderId ? (
             <FolderDetail
                 folderId={selectedFolderId}
                 onNavigate={handleNavigate}
-                //@ts-ignore
                 user={currentUser}
             />
         ) : (
             <DocumentsPage onNavigate={handleNavigate} user={currentUser} />
         );
-        return element;
       case 'login':
         return <LoginPage onNavigate={handleNavigate} />;
       case 'profile':
         return currentUser ? (
-          <UserProfilePage user={currentUser} />
+            <UserProfilePage user={currentUser} />
         ) : (
-          <HomePage onNavigate={handleNavigate} user={currentUser} />
+            <HomePage onNavigate={handleNavigate} user={currentUser} />
         );
       default:
         return <HomePage onNavigate={handleNavigate} user={currentUser} />;
@@ -82,33 +80,34 @@ function AppContent() {
   // If on login page, render it without the layout
   if (currentPage === 'login') {
     return (
-      <TagProvider>
-        <UploadProvider>
-          {renderCurrentPage()}
-        </UploadProvider>
-      </TagProvider>
+        <TagProvider>
+          <UploadProvider>
+            {renderCurrentPage()}
+          </UploadProvider>
+        </TagProvider>
     );
   }
 
   return (
-    <TagProvider>
-      <UploadProvider>
-        <Layout
-            currentPage={currentPage}
-            onNavigate={handleNavigate}
-            user={currentUser}
-            onLogout={handleLogout}       >
-          {renderCurrentPage()}
-        </Layout>
-      </UploadProvider>
-    </TagProvider>
+      <TagProvider>
+        <UploadProvider>
+          <Layout
+              currentPage={currentPage}
+              onNavigate={handleNavigate}
+              user={currentUser}
+              onLogout={handleLogout}
+          >
+            {renderCurrentPage()}
+          </Layout>
+        </UploadProvider>
+      </TagProvider>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
   );
 }

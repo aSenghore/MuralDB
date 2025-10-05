@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,6 +6,7 @@ import { Label } from './ui/label';
 import { FolderManagement } from './FolderManagement';
 import { TagManager } from './TagManager';
 import { TagFilter } from './TagFilter';
+import { ItemTags } from './ItemTags';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Folder, Plus, Upload, Settings, Tag, Loader2 } from 'lucide-react';
 import { FileIcon, getFileTypeFromName } from './FileIcon';
@@ -30,7 +30,7 @@ interface DocumentsPageProps {
 }
 
 export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
-  const { getItemsByTags } = useTagContext();
+  const { getItemsByTags, syncItemTags } = useTagContext();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [folders, setFolders] = useState<FirebaseFolder[]>([]);
   const [documents, setDocuments] = useState<FirebaseDocument[]>([]);
@@ -50,15 +50,29 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
 
   const loadFoldersAndDocuments = async () => {
     if (!user) return;
-    
+
     try {
       const [userFolders, userDocuments] = await Promise.all([
         documentService.getUserFolders(user.uid),
         documentService.getUserDocuments(user.uid)
       ]);
-      
+
       setFolders(userFolders);
       setDocuments(userDocuments);
+
+      // Sync folder tags to TagContext
+      userFolders.forEach(folder => {
+        if (folder.tags) {
+          syncItemTags(folder.id, 'folder', folder.tags);
+        }
+      });
+
+      // Sync document tags to TagContext
+      userDocuments.forEach(doc => {
+        if (doc.tags) {
+          syncItemTags(doc.id, 'document', doc.tags);
+        }
+      });
     } catch (error) {
       console.error('Error loading folders and documents:', error);
       toast.error('Failed to load documents');
@@ -69,18 +83,18 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
 
   const createFolder = async () => {
     if (!newFolderName.trim() || !user) return;
-    
+
     setIsCreating(true);
     try {
       const folderId = await documentService.createFolder(
-        user.uid,
-        newFolderName.trim(),
-        newFolderDescription.trim()
+          user.uid,
+          newFolderName.trim(),
+          newFolderDescription.trim()
       );
-      
+
       // Reload folders to get the new one
       await loadFoldersAndDocuments();
-      
+
       setNewFolderName('');
       setNewFolderDescription('');
       setIsDialogOpen(false);
@@ -99,10 +113,10 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
   };
 
   const handleTagToggle = (tagId: string) => {
-    setSelectedTagIds(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
+    setSelectedTagIds(prev =>
+        prev.includes(tagId)
+            ? prev.filter(id => id !== tagId)
+            : [...prev, tagId]
     );
   };
 
@@ -115,213 +129,223 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
     return documents.filter(doc => doc.folderId === folderId);
   };
 
-  // Filter folders based on selected tags
-  const filteredFolders = selectedTagIds.length > 0 
-    ? folders.filter(folder => {
+  // Filter folders based on selected tags (check both folder tags and document tags)
+  const filteredFolders = selectedTagIds.length > 0
+      ? folders.filter(folder => {
+        // Check if folder has any of the selected tags
+        const hasFolderTag = folder.tags && folder.tags.some(tag => selectedTagIds.includes(tag));
+        // Check if any document has any of the selected tags
         const folderDocs = getFolderDocuments(folder.id);
-        return folderDocs.some(doc => {
+        const hasDocumentTag = folderDocs.some(doc => {
           return doc.tags && doc.tags.some(tag => selectedTagIds.includes(tag));
         });
+        return hasFolderTag || hasDocumentTag;
       })
-    : folders;
+      : folders;
 
   const FolderThumbnail = ({ folder }: { folder: FirebaseFolder }) => {
     const folderDocs = getFolderDocuments(folder.id);
     const displayDocs = folderDocs.slice(0, 3);
-    
+
     return (
-      <div className="relative">
-        <div className="w-full h-32 sm:h-48 bg-muted rounded-lg border-2 border-dashed border-border flex items-center justify-center folder-thumbnail">
-          {displayDocs.length > 0 ? (
-            <div className="flex gap-1 sm:gap-2">
-              {displayDocs.map((doc, index) => (
-                <div
-                  key={doc.id}
-                  className="w-8 h-10 sm:w-12 sm:h-16 bg-card border border-border rounded shadow-sm flex items-center justify-center"
-                  style={{ transform: `translateX(${index * -2}px) rotate(${(index - 1) * 3}deg)` }}
-                >
-                  <FileIcon 
-                    fileType={getFileTypeFromName(doc.name)} 
-                    className="h-4 w-4 sm:h-6 sm:w-6" 
-                  />
+        <div className="relative">
+          <div className="w-full h-32 sm:h-48 bg-muted rounded-lg border-2 border-dashed border-border flex items-center justify-center folder-thumbnail">
+            {displayDocs.length > 0 ? (
+                <div className="flex gap-1 sm:gap-2">
+                  {displayDocs.map((doc, index) => (
+                      <div
+                          key={doc.id}
+                          className="w-8 h-10 sm:w-12 sm:h-16 bg-card border border-border rounded shadow-sm flex items-center justify-center"
+                          style={{ transform: `translateX(${index * -2}px) rotate(${(index - 1) * 3}deg)` }}
+                      >
+                        <FileIcon
+                            fileType={getFileTypeFromName(doc.name)}
+                            className="h-4 w-4 sm:h-6 sm:w-6"
+                        />
+                      </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <Folder className="h-8 w-8 sm:h-16 sm:w-16 text-muted-foreground" />
-          )}
+            ) : (
+                <Folder className="h-8 w-8 sm:h-16 sm:w-16 text-muted-foreground" />
+            )}
+          </div>
+          <div className="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 bg-primary text-primary-foreground text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+            {folderDocs.length} files
+          </div>
         </div>
-        <div className="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 bg-primary text-primary-foreground text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
-          {folderDocs.length} files
-        </div>
-      </div>
     );
   };
 
   // Show loading state
   if (!user) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Please sign in to view your documents.</p>
-      </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Please sign in to view your documents.</p>
+        </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <Loader2 className="h-8 w-8 mx-auto animate-spin mb-4" />
-        <p className="text-muted-foreground">Loading your documents...</p>
-      </div>
+        <div className="text-center py-12">
+          <Loader2 className="h-8 w-8 mx-auto animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading your documents...</p>
+        </div>
     );
   }
 
   if (isManagementMode) {
     return (
-      <FolderManagement
-          // @ts-ignore
-        folders={folders}
-        onSelectFolder={handleSelectFolderFromManagement}
-        onBack={() => setIsManagementMode(false)}
-        user={user}
-        onFoldersChange={loadFoldersAndDocuments}
-      />
+        <FolderManagement
+            folders={folders}
+            onSelectFolder={handleSelectFolderFromManagement}
+            onBack={() => setIsManagementMode(false)}
+            user={user}
+            onFoldersChange={loadFoldersAndDocuments}
+        />
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mobile-page-header">
-        <div>
-          <h1 className="mobile-page-title sm:text-3xl font-medium text-foreground">Documents</h1>
-          <p className="text-muted-foreground mobile-page-description sm:mt-2 sm:text-base">
-            Organize and access your project documents and files
-          </p>
-        </div>
-        <div className="flex items-center mobile-button-group sm:gap-2">
-          <TagManager>
-            <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
-              <Tag className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 mobile-icon" />
-              <span className="hidden sm:inline">Manage </span>Tags
-            </Button>
-          </TagManager>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setIsManagementMode(true)} 
-            className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
-          >
-            <Settings className="h-3 w-3 sm:h-4 sm:w-4 mobile-icon" />
-            Manage
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mobile-icon" />
-                <span className="hidden sm:inline">New </span>Folder
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mobile-page-header">
+          <div>
+            <h1 className="mobile-page-title sm:text-3xl font-medium text-foreground">Documents</h1>
+            <p className="text-muted-foreground mobile-page-description sm:mt-2 sm:text-base">
+              Organize and access your project documents and files
+            </p>
+          </div>
+          <div className="flex items-center mobile-button-group sm:gap-2">
+            <TagManager>
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                <Tag className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 mobile-icon" />
+                <span className="hidden sm:inline">Manage </span>Tags
               </Button>
-            </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Folder</DialogTitle>
-              <DialogDescription>
-                Create a new folder to organize your documents
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="folderName">Folder Name</Label>
-                <Input
-                  id="folderName"
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  placeholder="Enter folder name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="folderDescription">Description (Optional)</Label>
-                <Input
-                  id="folderDescription"
-                  value={newFolderDescription}
-                  onChange={(e) => setNewFolderDescription(e.target.value)}
-                  placeholder="Enter folder description"
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
+            </TagManager>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsManagementMode(true)}
+                className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
+            >
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mobile-icon" />
+              Manage
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mobile-icon" />
+                  <span className="hidden sm:inline">New </span>Folder
                 </Button>
-                <Button onClick={createFolder} disabled={isCreating}>
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Folder'
-                  )}
-                </Button>
-              </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Folder</DialogTitle>
+                  <DialogDescription>
+                    Create a new folder to organize your documents
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="folderName">Folder Name</Label>
+                    <Input
+                        id="folderName"
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        placeholder="Enter folder name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="folderDescription">Description (Optional)</Label>
+                    <Input
+                        id="folderDescription"
+                        value={newFolderDescription}
+                        onChange={(e) => setNewFolderDescription(e.target.value)}
+                        placeholder="Enter folder description"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={createFolder} disabled={isCreating}>
+                      {isCreating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Creating...
+                          </>
+                      ) : (
+                          'Create Folder'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        <TagFilter
+            selectedTags={selectedTagIds}
+            onTagToggle={handleTagToggle}
+            onClearFilter={handleClearTagFilter}
+            itemType="document"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 document-grid">
+          {filteredFolders.map((folder) => (
+              <Card
+                  key={folder.id}
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
+                  onClick={() => onNavigate('folder-detail', folder.id)}
+              >
+                <CardContent className="document-card sm:p-4">
+                  <FolderThumbnail folder={folder} />
+                </CardContent>
+                <CardHeader className="document-folder-info sm:pt-0">
+                  <CardTitle className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+                    <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-primary mobile-icon" />
+                    {folder.name}
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">{folder.description || 'Document folder'}</CardDescription>
+                  <ItemTags
+                      itemId={folder.id}
+                      itemType="folder"
+                      showAddButton={false}
+                      size="sm"
+                      className="mt-1"
+                  />
+                </CardHeader>
+              </Card>
+          ))}
+        </div>
+
+        {filteredFolders.length === 0 && selectedTagIds.length > 0 && (
+            <div className="text-center py-12">
+              <Folder className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No folders match your tag filter</h3>
+              <p className="text-muted-foreground mb-4">
+                Try adjusting your tag selection to see more folders
+              </p>
+              <Button onClick={handleClearTagFilter} variant="outline">
+                Clear Filter
+              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-        </div>
+        )}
+
+        {folders.length === 0 && (
+            <div className="text-center py-12">
+              <Folder className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No folders yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first folder to start organizing documents
+              </p>
+              <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Folder
+              </Button>
+            </div>
+        )}
       </div>
-
-      <TagFilter
-        selectedTags={selectedTagIds}
-        onTagToggle={handleTagToggle}
-        onClearFilter={handleClearTagFilter}
-        itemType="document"
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 document-grid">
-        {filteredFolders.map((folder) => (
-          <Card 
-            key={folder.id}
-            className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
-            onClick={() => onNavigate('folder-detail', folder.id)}
-          >
-            <CardContent className="document-card sm:p-4">
-              <FolderThumbnail folder={folder} />
-            </CardContent>
-            <CardHeader className="document-folder-info sm:pt-0">
-              <CardTitle className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
-                <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-primary mobile-icon" />
-                {folder.name}
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">{folder.description || 'Document folder'}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-
-      {filteredFolders.length === 0 && selectedTagIds.length > 0 && (
-        <div className="text-center py-12">
-          <Folder className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No folders match your tag filter</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your tag selection to see more folders
-          </p>
-          <Button onClick={handleClearTagFilter} variant="outline">
-            Clear Filter
-          </Button>
-        </div>
-      )}
-
-      {folders.length === 0 && (
-        <div className="text-center py-12">
-          <Folder className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No folders yet</h3>
-          <p className="text-muted-foreground mb-4">
-            Create your first folder to start organizing documents
-          </p>
-          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create Folder
-          </Button>
-        </div>
-      )}
-    </div>
   );
 }

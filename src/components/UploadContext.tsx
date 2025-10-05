@@ -131,14 +131,14 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 
   const getRecentUploads = (count: number) => {
     return uploads
-      .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
-      .slice(0, count);
+        .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
+        .slice(0, count);
   };
 
   return (
-    <UploadContext.Provider value={{ uploads, addUpload, removeUpload, getRecentUploads }}>
-      {children}
-    </UploadContext.Provider>
+      <UploadContext.Provider value={{ uploads, addUpload, removeUpload, getRecentUploads }}>
+        {children}
+      </UploadContext.Provider>
   );
 }
 
