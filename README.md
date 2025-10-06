@@ -40,9 +40,30 @@ There are numerous resources for storing references and finding them, as well as
 ## :floppy_disk: Installation Steps
 1. Download and extract
 2. Run ```npm install```
-3. Go to ```firebase.ts``` in ```src/config/firebase.ts```
-4. Replace the firebase configuration with your own firebase configuration (assuming the site is being installed for testing and development)
-5. Follow the instructions in FIREBASE_SETUP.md for the firestore and storage rules.
+3. In the src folder, create a folder named config, with a file named ```firebase.ts```.
+4. Go to ```firebase.ts``` in ```src/config/firebase.ts```, add your config.
+   ```
+    import { initializeApp } from 'firebase/app';
+    import { getAuth } from 'firebase/auth';
+    import { getFirestore } from 'firebase/firestore';
+    import { getStorage } from 'firebase/storage';
+    
+    const firebaseConfig = {
+        //Replace with your github configuration. 
+    };
+    
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    
+    // Initialize Firebase services
+    export const auth = getAuth(app);
+    export const db = getFirestore(app);
+    export const storage = getStorage(app);
+    
+    export default app;
+
+6. Replace the firebase configuration with your own firebase configuration (assuming the site is being installed for testing and development)
+7. Follow the instructions in FIREBASE_SETUP.md for the firestore and storage rules.
 
 ## :runner: How To Run
 1. From the src directory, run:
@@ -60,8 +81,11 @@ UI/UX Design, Database design, documentation, and code.
 Figma was used to work on the basic UI, alongside some aspects for the site.
 
 
-## :film_projector: Project Flyer & Video
-TBA
+## :film_projector: Demo videos
+
+**Sprint 1 Demo Video** 
+
+[![Sprint 1 Demo Video](https://img.youtube.com/vi/u89HqNRJvvA/0.jpg)](https://www.youtube.com/watch?v=u89HqNRJvvA)
 
 ## :white_check_mark: License
 This work is licensed under the [GNU General Public License](http://www.gnu.org/licenses/gpl.html). You can use it as long as aany changes/modifications you make are available for others to do so as well. Any alternative versions must be licensed under the GPL.
