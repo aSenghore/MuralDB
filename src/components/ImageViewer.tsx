@@ -16,6 +16,7 @@ import {
   Check,
   Trash2
 } from 'lucide-react';
+import {set} from "react-hook-form";
 
 interface ImageItem {
   url: string;
@@ -170,103 +171,106 @@ export function ImageViewer({
           <DialogDescription className="sr-only">
             {currentImage ? `Image ${currentImageIndex + 1} of ${images.length}` : 'Image viewer with zoom and navigation controls'}
           </DialogDescription>
+          {/* Header with controls */}
+          <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center p-4 bg-gradient-to-b
+             from-black/80 to-transparent">
+            <div className="flex items-center gap-2 text-white">
+              {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleNameSave();
+                          } else if (e.key === 'Escape') {
+                            handleNameCancel();
+                          }
+                        }}
+                        autoFocus
+                    />
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleNameSave}
+                        className="text-white hover:bg-white/10"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleNameCancel}
+                        className="text-white hover:bg-white/10"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+              ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{currentImage.name}</span>
+                    {onImageRename && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingName(true)}
+                            className="text-white hover:bg-white/10"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                    )}
+                  </div>
+              )}
+              <span className="text-sm text-white/60">
+                {currentImageIndex + 1} of {images.length}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {showControls && (
+                  <>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleDownload}
+                        className="text-white hover:bg-white/10"
+                        title="Download"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    {onImageDelete && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleDelete}
+                            className="text-white hover:bg-red-500/20"
+                            title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                  </>
+              )}
+              <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onClose}
+                  className="text-white hover:bg-white/10"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
           <div className="relative w-full h-full flex flex-col"
                style={{
                  overflow: 'hidden',
-                 overflowY: 'inherit'
+                 overflowY: 'inherit',
+                 overflowX: 'scroll'
                }}
           >
 
-            {/* Header with controls */}
-            <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent">
-              <div className="flex items-center gap-2 text-white">
-                {isEditingName ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleNameSave();
-                            } else if (e.key === 'Escape') {
-                              handleNameCancel();
-                            }
-                          }}
-                          autoFocus
-                      />
-                      <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={handleNameSave}
-                          className="text-white hover:bg-white/10"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={handleNameCancel}
-                          className="text-white hover:bg-white/10"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{currentImage.name}</span>
-                      {onImageRename && (
-                          <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setIsEditingName(true)}
-                              className="text-white hover:bg-white/10"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
-                      )}
-                    </div>
-                )}
-                <span className="text-sm text-white/60">
-                {currentImageIndex + 1} of {images.length}
-              </span>
-              </div>
 
-              <div className="flex items-center gap-2">
-                {showControls && (
-                    <>
-                      <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={handleDownload}
-                          className="text-white hover:bg-white/10"
-                          title="Download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      {onImageDelete && (
-                          <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleDelete}
-                              className="text-white hover:bg-red-500/20"
-                              title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                      )}
-                    </>
-                )}
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={onClose}
-                    className="text-white hover:bg-white/10"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
 
             {/* Main image area */}
             <div className="flex-1 flex items-center justify-center p-4 pt-16 pb-20">
@@ -274,7 +278,7 @@ export function ImageViewer({
                   className="relative transition-transform duration-200 ease-in-out"
                   style={{
                     transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                    transformOrigin: 'center center'
+                    transformOrigin: 'left top'
                     }}
               >
                 <ImageWithFallback
@@ -312,47 +316,52 @@ export function ImageViewer({
                 </>
             )}
 
-          </div>
-          {/* Bottom controls */}
-          {showControls && (
-              <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center items-center p-4 bg-gradient-to-t from-black/80 to-transparent">
-                <div className="flex items-center gap-2 bg-black/50 rounded-lg p-2">
-                  <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleZoomOut}
-                      disabled={zoom <= 0.25}
-                      className="text-white hover:bg-white/10"
-                      title="Zoom Out"
-                  >
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <span className="text-white text-sm min-w-[3rem] text-center">
+            {/* Bottom controls */}
+            {showControls && (
+                <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center items-center p-4 ">
+                  <div className="flex items-center gap-2 bg-black/50 rounded-lg p-2"
+                       style={{
+                         position: 'fixed',
+                         marginBottom: '20px'
+                       }}>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleZoomOut}
+                        disabled={zoom <= 0.25}
+                        className="text-white hover:bg-white/10"
+                        title="Zoom Out"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <span className="text-white text-sm min-w-[3rem] text-center">
                   {Math.round(zoom * 100)}%
                 </span>
-                  <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleZoomIn}
-                      disabled={zoom >= 3}
-                      className="text-white hover:bg-white/10"
-                      title="Zoom In"
-                  >
-                    <ZoomIn className="h-4 w-4" />
-                  </Button>
-                  <div className="w-px h-6 bg-white/20 mx-2" />
-                  <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleRotate}
-                      className="text-white hover:bg-white/10"
-                      title="Rotate"
-                  >
-                    <RotateCw className="h-4 w-4" />
-                  </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleZoomIn}
+                        disabled={zoom >= 3}
+                        className="text-white hover:bg-white/10"
+                        title="Zoom In"
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                    <div className="w-px h-6 bg-white/20 mx-2" />
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleRotate}
+                        className="text-white hover:bg-white/10"
+                        title="Rotate"
+                    >
+                      <RotateCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-          )}
+            )}
+          </div>
+
         </DialogContent>
       </Dialog>
   );
