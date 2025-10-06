@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import  * as React from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -262,19 +263,22 @@ export function ImageViewer({
             </div>
 
             {/* Main image area */}
-            <div className="flex-1 flex items-center justify-center p-4 pt-16 pb-20 overflow-auto">
+            <div className="flex-1 flex items-center justify-center p-4 pt-16 pb-20 overflow-hidden">
               <div
                   className="relative transition-transform duration-200 ease-in-out"
                   style={{
                     transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                    transformOrigin: 'center center'
+                    transformOrigin: 'center center',
+
                   }}
               >
                 <ImageWithFallback
                     src={currentImage.url}
                     alt={currentImage.name}
                     className="max-h-[calc(90vh-12rem)] w-auto object-contain"
-                    style={{ display: 'block' }}
+                    style={{
+                      display: 'block',
+                    }}
                 />
               </div>
             </div>
