@@ -21,8 +21,8 @@ interface TagContextType {
   createTag: (name: string, color: string) => Promise<Tag>;
   deleteTag: (tagId: string) => Promise<void>;
   updateTag: (tagId: string, updates: Partial<Tag>) => Promise<void>;
-  addTagToItem: (itemId: string, itemType: 'image' | 'document' | 'gallery' | 'folder', tagId: string) => Promise<void>;
-  removeTagFromItem: (itemId: string, tagId: string) => Promise<void>;
+  addTagToItem: (itemId: string, itemType: 'image' | 'document' | 'gallery' | 'folder', tagId: string, galleryId?: string) => Promise<void>;
+  removeTagFromItem: (itemId: string, tagId: string, galleryId?: string) => Promise<void>;
   getItemTags: (itemId: string) => Tag[];
   getItemsByTags: (tagIds: string[], itemType?: 'image' | 'document' | 'gallery' | 'folder') => TaggedItem[];
   syncItemTags: (itemId: string, itemType: 'image' | 'document' | 'gallery' | 'folder', tagIds: string[]) => void;
@@ -134,7 +134,7 @@ export const TagProvider: React.FC<TagProviderProps> = ({ children }) => {
     }
   };
 
-  const addTagToItem = async (itemId: string, itemType: 'image' | 'document' | 'gallery' | 'folder', tagId: string) => {
+  const addTagToItem = async (itemId: string, itemType: 'image' | 'document' | 'gallery' | 'folder', tagId: string, galleryId?: string) => {
     // Get current tag array for this item
     const existingItem = taggedItems.find(item => item.id === itemId);
     const currentTagIds = existingItem?.tagIds || [];
@@ -164,8 +164,12 @@ export const TagProvider: React.FC<TagProviderProps> = ({ children }) => {
     // Save to Firebase based on item type
     try {
       if (itemType === 'image') {
-        // For images, we need to find the gallery and update
-        // This will be handled by the GalleryDetail component calling galleryService.updateImageTags
+        // For images, we need the galleryId to update properly
+        if (!galleryId) {
+          console.error('Gallery ID required for image tag updates');
+          throw new Error('Gallery ID is required to update image tags');
+        }
+        await galleryService.updateImageTags(galleryId, itemId, newTagIds);
       } else if (itemType === 'document') {
         await documentService.updateDocumentTags(itemId, newTagIds);
       } else if (itemType === 'gallery') {
@@ -187,7 +191,7 @@ export const TagProvider: React.FC<TagProviderProps> = ({ children }) => {
     }
   };
 
-  const removeTagFromItem = async (itemId: string, tagId: string) => {
+  const removeTagFromItem = async (itemId: string, tagId: string, galleryId?: string) => {
     // Find the item to get its type
     const item = taggedItems.find(i => i.id === itemId);
     if (!item) return;
@@ -207,8 +211,12 @@ export const TagProvider: React.FC<TagProviderProps> = ({ children }) => {
     // Save to Firebase based on item type
     try {
       if (item.type === 'image') {
-        // For images, we need to find the gallery and update
-        // This will be handled by the GalleryDetail component calling galleryService.updateImageTags
+        // For images, we need the galleryId to update properly
+        if (!galleryId) {
+          console.error('Gallery ID required for image tag updates');
+          throw new Error('Gallery ID is required to update image tags');
+        }
+        await galleryService.updateImageTags(galleryId, itemId, newTagIds);
       } else if (item.type === 'document') {
         await documentService.updateDocumentTags(itemId, newTagIds);
       } else if (item.type === 'gallery') {

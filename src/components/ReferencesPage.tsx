@@ -47,7 +47,7 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
   }, [user]);
 
   const loadGalleries = async () => {
-    if (!user) return;
+    if (!user) return [];
 
     try {
       const userGalleries = await galleryService.getUserGalleries(user.uid, 'references');
@@ -66,9 +66,12 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
           }
         });
       });
+
+      return userGalleries;
     } catch (error) {
       console.error('Error loading galleries:', error);
       toast.error('Failed to load galleries');
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -110,11 +113,11 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
       }
 
       // Reload galleries to get updated data
-      await loadGalleries();
+      const updatedGalleries = await loadGalleries();
 
       // Update selected gallery if it's currently open
       if (selectedGallery && selectedGallery.id === galleryId) {
-        const updatedGallery = galleries.find(g => g.id === galleryId);
+        const updatedGallery = updatedGalleries.find(g => g.id === galleryId);
         if (updatedGallery) {
           setSelectedGallery(updatedGallery);
         }
@@ -137,11 +140,11 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
       await galleryService.removeImage(galleryId, imageToDelete.id);
 
       // Reload galleries to get updated data
-      await loadGalleries();
+      const updatedGalleries = await loadGalleries();
 
       // Update selected gallery if it's currently open
       if (selectedGallery && selectedGallery.id === galleryId) {
-        const updatedGallery = galleries.find(g => g.id === galleryId);
+        const updatedGallery = updatedGalleries.find(g => g.id === galleryId);
         if (updatedGallery) {
           setSelectedGallery(updatedGallery);
         }
@@ -223,18 +226,32 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
     );
   }
 
+  const handleTagsChanged = async () => {
+    if (!selectedGallery) return;
+
+    // Reload galleries to get updated tag data
+    const updatedGalleries = await loadGalleries();
+
+    // Update selected gallery with new tag data
+    const updatedGallery = updatedGalleries.find(g => g.id === selectedGallery.id);
+    if (updatedGallery) {
+      setSelectedGallery(updatedGallery);
+    }
+  };
+
   if (selectedGallery) {
     return (
         <GalleryDetail
             title={selectedGallery.name}
             images={selectedGallery.images.map(img => img.downloadURL)}
             imageNames={selectedGallery.images.map(img => img.name)}
+            imageIds={selectedGallery.images.map(img => img.id)}
             galleryId={selectedGallery.id}
             onBack={() => setSelectedGallery(null)}
             onFilesUploaded={(files) => handleFilesUploaded(selectedGallery.id, files)}
             onDeleteImage={(index) => handleDeleteImage(selectedGallery.id, index)}
             onTitleChange={(newTitle) => handleTitleChange(selectedGallery.id, newTitle)}
-            //user={user}
+            onTagsChanged={handleTagsChanged}
         />
     );
   }
@@ -356,6 +373,20 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
               </p>
               <Button onClick={handleClearTagFilter} variant="outline">
                 Clear Filter
+              </Button>
+            </div>
+        )}
+
+        {filteredGalleries.length === 0 && selectedTagIds.length === 0 && (
+            <div className="text-center py-12">
+              <Image className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No reference galleries yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first gallery to start organizing your reference images
+              </p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Gallery
               </Button>
             </div>
         )}

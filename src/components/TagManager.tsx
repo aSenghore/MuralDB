@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
-import { Plus, X, Edit3, Trash2 } from 'lucide-react';
+import { Plus, X, Edit3, Trash2, Pipette } from 'lucide-react';
 import { useTagContext, Tag } from './TagContext';
 
 const TAG_COLORS = [
@@ -25,6 +25,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ children }) => {
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [newTagName, setNewTagName] = useState('');
   const [selectedColor, setSelectedColor] = useState(TAG_COLORS[0]);
+  const [customColorInput, setCustomColorInput] = useState(TAG_COLORS[0]);
 
   const handleCreateTag = async () => {
     if (newTagName.trim()) {
@@ -37,6 +38,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ children }) => {
         }
         setNewTagName('');
         setSelectedColor(TAG_COLORS[0]);
+        setCustomColorInput(TAG_COLORS[0]);
       } catch (error) {
         console.error('Error creating/updating tag:', error);
       }
@@ -47,6 +49,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ children }) => {
     setEditingTag(tag);
     setNewTagName(tag.name);
     setSelectedColor(tag.color);
+    setCustomColorInput(tag.color);
   };
 
   const handleDeleteTag = async (tagId: string) => {
@@ -61,6 +64,17 @@ export const TagManager: React.FC<TagManagerProps> = ({ children }) => {
     setEditingTag(null);
     setNewTagName('');
     setSelectedColor(TAG_COLORS[0]);
+    setCustomColorInput(TAG_COLORS[0]);
+  };
+
+  const handleColorPickerChange = (color: string) => {
+    setCustomColorInput(color);
+    setSelectedColor(color);
+  };
+
+  const handlePresetColorSelect = (color: string) => {
+    setSelectedColor(color);
+    setCustomColorInput(color);
   };
 
   return (
@@ -73,7 +87,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ children }) => {
               </Button>
           )}
         </DialogTrigger>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Tags</DialogTitle>
             <DialogDescription>
@@ -95,7 +109,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ children }) => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="tagName">Tag Name</Label>
                   <Input
@@ -106,21 +120,65 @@ export const TagManager: React.FC<TagManagerProps> = ({ children }) => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Color</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {TAG_COLORS.map((color) => (
-                        <button
-                            key={color}
-                            className={`w-8 h-8 rounded-full border-2 transition-all ${
-                                selectedColor === color
-                                    ? 'border-foreground scale-110'
-                                    : 'border-border hover:scale-105'
-                            }`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => setSelectedColor(color)}
+
+                  {/* Color Picker */}
+                  <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                    <div className="relative">
+                      <input
+                          type="color"
+                          value={customColorInput}
+                          onChange={(e) => handleColorPickerChange(e.target.value)}
+                          className="w-12 h-12 rounded-lg cursor-pointer border-2 border-border"
+                          style={{
+                            padding: '2px',
+                          }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Input
+                            type="text"
+                            value={customColorInput}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setCustomColorInput(value);
+                              // Only update selected color if it's a valid hex color
+                              if (/^#[0-9A-F]{6}$/i.test(value)) {
+                                setSelectedColor(value);
+                              }
+                            }}
+                            placeholder="#000000"
+                            className="font-mono uppercase"
+                            maxLength={7}
                         />
-                    ))}
+                        <Pipette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Pick any color or enter a hex code
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Preset Colors */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Quick select:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {TAG_COLORS.map((color) => (
+                          <button
+                              key={color}
+                              className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                  selectedColor === color
+                                      ? 'border-foreground scale-110 ring-2 ring-ring ring-offset-2'
+                                      : 'border-border hover:scale-105'
+                              }`}
+                              style={{ backgroundColor: color }}
+                              onClick={() => handlePresetColorSelect(color)}
+                              title={color}
+                          />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -47,7 +47,7 @@ export function ArtPhotosPage({ user, onBack }: ArtPhotosPageProps) {
   }, [user]);
 
   const loadGalleries = async () => {
-    if (!user) return;
+    if (!user) return [];
 
     try {
       const userGalleries = await galleryService.getUserGalleries(user.uid, 'art');
@@ -66,9 +66,12 @@ export function ArtPhotosPage({ user, onBack }: ArtPhotosPageProps) {
           }
         });
       });
+
+      return userGalleries;
     } catch (error) {
       console.error('Error loading galleries:', error);
       toast.error('Failed to load galleries');
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -110,11 +113,11 @@ export function ArtPhotosPage({ user, onBack }: ArtPhotosPageProps) {
       }
 
       // Reload galleries to get updated data
-      await loadGalleries();
+      const updatedGalleries = await loadGalleries();
 
       // Update selected gallery if it's currently open
       if (selectedGallery && selectedGallery.id === galleryId) {
-        const updatedGallery = galleries.find(g => g.id === galleryId);
+        const updatedGallery = updatedGalleries.find(g => g.id === galleryId);
         if (updatedGallery) {
           setSelectedGallery(updatedGallery);
         }
@@ -137,11 +140,11 @@ export function ArtPhotosPage({ user, onBack }: ArtPhotosPageProps) {
       await galleryService.removeImage(galleryId, imageToDelete.id);
 
       // Reload galleries to get updated data
-      await loadGalleries();
+      const updatedGalleries = await loadGalleries();
 
       // Update selected gallery if it's currently open
       if (selectedGallery && selectedGallery.id === galleryId) {
-        const updatedGallery = galleries.find(g => g.id === galleryId);
+        const updatedGallery = updatedGalleries.find(g => g.id === galleryId);
         if (updatedGallery) {
           setSelectedGallery(updatedGallery);
         }
@@ -223,18 +226,32 @@ export function ArtPhotosPage({ user, onBack }: ArtPhotosPageProps) {
     );
   }
 
+  const handleTagsChanged = async () => {
+    if (!selectedGallery) return;
+
+    // Reload galleries to get updated tag data
+    const updatedGalleries = await loadGalleries();
+
+    // Update selected gallery with new tag data
+    const updatedGallery = updatedGalleries.find(g => g.id === selectedGallery.id);
+    if (updatedGallery) {
+      setSelectedGallery(updatedGallery);
+    }
+  };
+
   if (selectedGallery) {
     return (
         <GalleryDetail
             title={selectedGallery.name}
             images={selectedGallery.images.map(img => img.downloadURL)}
             imageNames={selectedGallery.images.map(img => img.name)}
+            imageIds={selectedGallery.images.map(img => img.id)}
             galleryId={selectedGallery.id}
             onBack={() => setSelectedGallery(null)}
             onFilesUploaded={(files) => handleFilesUploaded(selectedGallery.id, files)}
             onDeleteImage={(index) => handleDeleteImage(selectedGallery.id, index)}
             onTitleChange={(newTitle) => handleTitleChange(selectedGallery.id, newTitle)}
-            //user={user}
+            onTagsChanged={handleTagsChanged}
         />
     );
   }

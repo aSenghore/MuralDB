@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -19,15 +18,17 @@ interface GalleryDetailProps {
   title: string;
   images: string[];
   imageNames?: string[];
-  galleryId?: string; // Add galleryId to create unique image IDs for tagging
+  imageIds?: string[]; // Add imageIds to use actual Firebase IDs for tagging
+  galleryId?: string; // Add galleryId for saving image tags
   onBack: () => void;
   onFilesUploaded: (files: File[]) => void;
   onDeleteImage: (index: number) => void;
   onTitleChange?: (newTitle: string) => void;
   onImageRename?: (index: number, newName: string) => void;
+  onTagsChanged?: () => void; // Callback when tags are added/removed from images
 }
 
-export function GalleryDetail({ title, images, imageNames: propImageNames, galleryId = 'default', onBack, onFilesUploaded, onDeleteImage, onTitleChange, onImageRename }: GalleryDetailProps) {
+export function GalleryDetail({ title, images, imageNames: propImageNames, imageIds, galleryId = 'default', onBack, onFilesUploaded, onDeleteImage, onTitleChange, onImageRename, onTagsChanged }: GalleryDetailProps) {
   const { addUpload } = useUploads();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
@@ -38,8 +39,8 @@ export function GalleryDetail({ title, images, imageNames: propImageNames, galle
   );
   const [showTagsFor, setShowTagsFor] = useState<number | null>(null);
 
-  // Generate unique image IDs for tagging
-  const getImageId = (index: number) => `${galleryId}-image-${index}`;
+  // Use actual Firebase image IDs if available, otherwise generate IDs
+  const getImageId = (index: number) => imageIds?.[index] || `${galleryId}-image-${index}`;
 
   // Update imageNames when propImageNames changes
   React.useEffect(() => {
@@ -221,6 +222,8 @@ export function GalleryDetail({ title, images, imageNames: propImageNames, galle
                               itemType="image"
                               size="sm"
                               className="opacity-90 mobile-tags"
+                              galleryId={galleryId}
+                              onTagsChanged={onTagsChanged}
                           />
                         </div>
                       </div>
@@ -278,6 +281,8 @@ export function GalleryDetail({ title, images, imageNames: propImageNames, galle
                                     itemType="image"
                                     showAddButton={true}
                                     size="sm"
+                                    galleryId={galleryId}
+                                    onTagsChanged={onTagsChanged}
                                 />
                               </div>
                           )}

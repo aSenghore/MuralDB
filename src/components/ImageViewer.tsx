@@ -262,18 +262,19 @@ export function ImageViewer({
             </div>
 
             {/* Main image area */}
-            <div className="flex-1 flex items-center justify-center p-4 pt-16">
+            <div className="flex-1 flex items-center justify-center p-4 pt-16 pb-20 overflow-auto">
               <div
-                  className="relative max-w-full max-h-full"
+                  className="relative transition-transform duration-200 ease-in-out"
                   style={{
                     transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                    transition: 'transform 0.2s ease-in-out'
+                    transformOrigin: 'center center'
                   }}
               >
                 <ImageWithFallback
                     src={currentImage.url}
                     alt={currentImage.name}
-                    className="max-w-full max-h-full object-contain"
+                    className="max-h-[calc(90vh-12rem)] w-auto object-contain"
+                    style={{ display: 'block' }}
                 />
               </div>
             </div>

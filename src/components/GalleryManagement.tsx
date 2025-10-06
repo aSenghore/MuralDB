@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
@@ -26,7 +27,7 @@ interface GalleryManagementProps {
   pageTitle?: string;
   onBack?: () => void;
   user: User | null;
-  onGalleriesChange: () => Promise<void>;
+  onGalleriesChange: () => Promise<FirebaseGallery[]>;
 }
 
 export function GalleryManagement({ galleries, onSelectGallery, pageTitle = "Gallery", onBack, user, onGalleriesChange }: GalleryManagementProps) {
