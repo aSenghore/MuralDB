@@ -22,13 +22,16 @@ There are numerous resources for storing references and finding them, as well as
     - Recent uploads section to show the last added images and documents
 2. **Gallery Pages**
     - Pages that store different galleries for users. Pages for references, created art/ photos, and uploaded documents.
+    - Tags can be applied for categorization and organization.
 3. **Tags**
     - Images and documents can be tagged for better organization site-wide/
 4. **Database**
     - Stores images with login information, alongside documents, profile picture, and more.
 5. **Tools**
     - A tools section dedicated to fun and helpful resources.
-    - Currently only contains character prompt generator, upcoming tools include photo challenges, palette generator, and more.
+    - Character prompt generator
+    - Color palette generator
+    - Photo challenges in the works
 6. **Resources**
     - Contains references to helpful resources for creatives.
     - Includes drawing tablets, sketchbooks, cameras, digital art software, and where to buy.
@@ -73,7 +76,8 @@ There are numerous resources for storing references and finding them, as well as
    This will automatically start the app in a new tab.
 
 2. Create and account or log in using an existing account.
-    - At the current moment you have to sign up, then log in separately. This is currently being worked on.
+    - After creating an account, you should be automatically signed in.
+    - Password reset is in the works.
 
 ## :space_invader: Team
 **Abdou Senghore** <br>
