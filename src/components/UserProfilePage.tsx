@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../config/firebase';
 
+//change profile with this file
+//text added to test git-ignore changes
 interface UserProfilePageProps {
   user: {
     uid: string;
