@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Palette, Copy, Lock, Unlock } from 'lucide-react';
+import { Input } from './ui/input';
+import { Palette, Copy, Lock, Unlock, Pipette } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ColorData {
@@ -20,6 +21,8 @@ export function PalettePicker() {
         { hex: '#808080', label: 'Extra 2', locked: false },
         { hex: '#808080', label: 'Extra 3', locked: false },
     ]);
+    const [customColor, setCustomColor] = useState<string>('#3b82f6');
+    const [customShades, setCustomShades] = useState<string[]>([]);
 
     // Generate a random hex color
     const generateRandomColor = (): string => {
@@ -177,6 +180,42 @@ export function PalettePicker() {
         });
     };
 
+    // Generate random shades from a base color
+    const generateCustomShades = (baseColor: string) => {
+        const rgb = hexToRgb(baseColor);
+        const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+        const shades: string[] = [baseColor]; // Start with the base color
+
+        // Generate 9 random variations
+        for (let i = 0; i < 9; i++) {
+            // Randomly vary hue, saturation, and lightness
+            const hueVariation = (Math.random() - 0.5) * 30; // ±15 degrees
+            const satVariation = (Math.random() - 0.5) * 0.3; // ±0.15
+            const lightVariation = (Math.random() - 0.5) * 0.4; // ±0.2
+
+            let newHue = (hsl.h + hueVariation + 360) % 360;
+            let newSat = Math.max(0, Math.min(1, hsl.s + satVariation));
+            let newLight = Math.max(0.1, Math.min(0.9, hsl.l + lightVariation));
+
+            const newRgb = hslToRgb(newHue, newSat, newLight);
+            shades.push(rgbToHex(newRgb.r, newRgb.g, newRgb.b));
+        }
+
+        setCustomShades(shades);
+        toast.success('Shades generated!');
+    };
+
+    // Copy custom shades
+    const copyCustomShades = () => {
+        const shadesText = customShades.join('\n');
+        navigator.clipboard.writeText(shadesText).then(() => {
+            toast.success('Shades copied to clipboard!');
+        }).catch(() => {
+            toast.error('Failed to copy shades');
+        });
+    };
+
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
             <Card>
@@ -253,6 +292,89 @@ export function PalettePicker() {
                         <Copy className="h-4 w-4 mr-2" />
                         Copy Entire Palette
                     </Button>
+                </CardContent>
+            </Card>
+
+            {/* Custom Color Shade Generator */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Pipette className="h-5 w-5 text-primary" />
+                        Custom Color Shades
+                    </CardTitle>
+                    <CardDescription>
+                        Pick a color and generate 9 random shades based on it.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* Color Picker Input */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex-1 space-y-2">
+                            <label className="text-sm font-medium">Pick a Color</label>
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Input
+                                        type="color"
+                                        value={customColor}
+                                        onChange={(e) => setCustomColor(e.target.value)}
+                                        className="h-12 cursor-pointer"
+                                    />
+                                </div>
+                                <Input
+                                    type="text"
+                                    value={customColor}
+                                    onChange={(e) => setCustomColor(e.target.value)}
+                                    className="w-32 font-mono"
+                                    placeholder="#000000"
+                                />
+                            </div>
+                        </div>
+                        <div className="pt-8">
+                            <Button
+                                onClick={() => generateCustomShades(customColor)}
+                                size="lg"
+                            >
+                                <Pipette className="h-4 w-4 mr-2" />
+                                Generate Shades
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Display Shades */}
+                    {customShades.length > 0 && (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-medium">Generated Shades</h4>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={copyCustomShades}
+                                >
+                                    <Copy className="h-3 w-3 mr-2" />
+                                    Copy All
+                                </Button>
+                            </div>
+                            <div className="flex gap-3 overflow-x-auto pb-2">
+                                {customShades.map((shade, index) => (
+                                    <div key={index} className="flex-shrink-0 space-y-2 w-28">
+                                        <div className="relative group">
+                                            <div
+                                                className="w-full h-24 rounded-lg border-2 border-border shadow-sm transition-transform hover:scale-105 cursor-pointer"
+                                                style={{ backgroundColor: shade }}
+                                                onClick={() => copyColor(shade, index === 0 ? 'Base Color' : `Shade ${index}`)}
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Copy className="h-5 w-5 text-white drop-shadow-lg" />
+                                            </div>
+                                        </div>
+                                        <code className="text-xs bg-muted px-2 py-1 rounded block text-center truncate">
+                                            {shade}
+                                        </code>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
