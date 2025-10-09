@@ -8,7 +8,7 @@ import { TagManager } from './TagManager';
 import { TagFilter } from './TagFilter';
 import { ItemTags } from './ItemTags';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Folder, Plus, Upload, Settings, Tag, Loader2 } from 'lucide-react';
+import { Folder, Plus, Upload, Settings, Tag, Loader2, Pin } from 'lucide-react';
 import { FileIcon, getFileTypeFromName } from './FileIcon';
 import { useTagContext } from './TagContext';
 import { documentService } from '../services/firebaseService';
@@ -129,6 +129,38 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
     return documents.filter(doc => doc.folderId === folderId);
   };
 
+  const handlePinFolder = async (folderId: string) => {
+    if (!user) return;
+
+    try {
+      await documentService.pinFolder(folderId, user.uid);
+      await loadFoldersAndDocuments();
+      toast.success('Folder pinned successfully!');
+    } catch (error: any) {
+      console.error('Error pinning folder:', error);
+      // Show a more prominent error message for the pin limit
+      if (error.message && error.message.includes('Maximum of 3')) {
+        toast.error(error.message, {
+          duration: 5000,
+          description: 'You can only pin up to 3 folders at a time.'
+        });
+      } else {
+        toast.error(error.message || 'Failed to pin folder');
+      }
+    }
+  };
+
+  const handleUnpinFolder = async (folderId: string) => {
+    try {
+      await documentService.unpinFolder(folderId);
+      await loadFoldersAndDocuments();
+      toast.success('Folder unpinned!');
+    } catch (error: any) {
+      console.error('Error unpinning folder:', error);
+      toast.error('Failed to unpin folder');
+    }
+  };
+
   // Filter folders based on selected tags (check both folder tags and document tags)
   const filteredFolders = selectedTagIds.length > 0
       ? folders.filter(folder => {
@@ -142,6 +174,21 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
         return hasFolderTag || hasDocumentTag;
       })
       : folders;
+
+  // Sort folders: pinned first (by pinnedOrder), then by createdAt
+  const sortedFolders = [...filteredFolders].sort((a, b) => {
+    // Pinned folders come first
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+
+    // Both pinned: sort by pinnedOrder
+    if (a.pinned && b.pinned) {
+      return (a.pinnedOrder ?? 0) - (b.pinnedOrder ?? 0);
+    }
+
+    // Both unpinned: sort by createdAt (most recent first)
+    return b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime();
+  });
 
   const FolderThumbnail = ({ folder }: { folder: FirebaseFolder }) => {
     const folderDocs = getFolderDocuments(folder.id);
@@ -293,34 +340,57 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 document-grid">
-          {filteredFolders.map((folder) => (
-              <Card
-                  key={folder.id}
-                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
-                  onClick={() => onNavigate('folder-detail', folder.id)}
-              >
-                <CardContent className="document-card sm:p-4">
-                  <FolderThumbnail folder={folder} />
-                </CardContent>
-                <CardHeader className="document-folder-info sm:pt-0">
-                  <CardTitle className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
-                    <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-primary mobile-icon" />
-                    {folder.name}
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">{folder.description || 'Document folder'}</CardDescription>
-                  <ItemTags
-                      itemId={folder.id}
-                      itemType="folder"
-                      showAddButton={false}
-                      size="sm"
-                      className="mt-1"
-                  />
-                </CardHeader>
-              </Card>
+          {sortedFolders.map((folder) => (
+              <div key={folder.id} className="relative">
+                <Card
+                    className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
+                    onClick={() => onNavigate('folder-detail', folder.id)}
+                >
+                  <CardContent className="document-card sm:p-4">
+                    <FolderThumbnail folder={folder} />
+                  </CardContent>
+                  <CardHeader className="document-folder-info sm:pt-0">
+                    <CardTitle className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+                      <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-primary mobile-icon" />
+                      {folder.name}
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">{folder.description || 'Document folder'}</CardDescription>
+                    <ItemTags
+                        itemId={folder.id}
+                        itemType="folder"
+                        showAddButton={true}
+                        size="sm"
+                        className="mt-1"
+                        onTagsChanged={loadFoldersAndDocuments}
+                    />
+                  </CardHeader>
+                </Card>
+                <Button
+                    size="sm"
+                    variant={folder.pinned ? "default" : "outline"}
+                    className="absolute top-2 right-2 h-8 w-8 p-0 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (folder.pinned) {
+                        handleUnpinFolder(folder.id);
+                      } else {
+                        handlePinFolder(folder.id);
+                      }
+                    }}
+                    title={folder.pinned ? "Unpin folder" : "Pin folder"}
+                >
+                  <Pin className={`h-4 w-4 ${folder.pinned ? 'fill-current' : ''}`} />
+                </Button>
+                {folder.pinned && (
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md z-10">
+                      Pinned
+                    </div>
+                )}
+              </div>
           ))}
         </div>
 
-        {filteredFolders.length === 0 && selectedTagIds.length > 0 && (
+        {sortedFolders.length === 0 && selectedTagIds.length > 0 && (
             <div className="text-center py-12">
               <Folder className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No folders match your tag filter</h3>

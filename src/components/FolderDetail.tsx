@@ -31,9 +31,10 @@ interface FolderDetailProps {
   folderId: string;
   onNavigate: (page: string) => void;
   user: User | null;
+  selectedDocumentId?: string | null;
 }
 
-export function FolderDetail({ folderId, onNavigate, user }: FolderDetailProps) {
+export function FolderDetail({ folderId, onNavigate, user, selectedDocumentId }: FolderDetailProps) {
   const { getItemsByTags, syncItemTags } = useTagContext();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [folder, setFolder] = useState<FirebaseFolder | null>(null);
@@ -85,6 +86,15 @@ export function FolderDetail({ folderId, onNavigate, user }: FolderDetailProps) 
             syncItemTags(doc.id, 'document', doc.tags);
           }
         });
+
+        // Auto-open document if selectedDocumentId is provided
+        if (selectedDocumentId) {
+          const doc = folderDocs.find(d => d.id === selectedDocumentId);
+          if (doc) {
+            setSelectedDocument(doc);
+            setViewerOpen(true);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading folder:', error);
@@ -393,7 +403,12 @@ export function FolderDetail({ folderId, onNavigate, user }: FolderDetailProps) 
                       <span>{formatDate(doc.uploadedAt)}</span>
                     </div>
 
-                    <ItemTags itemId={doc.id} itemType="document" />
+                    <ItemTags
+                        itemId={doc.id}
+                        itemType="document"
+                        showAddButton={true}
+                        onTagsChanged={loadFolderAndDocuments}
+                    />
 
                     <div className="flex gap-2 pt-2">
                       <Button
@@ -491,6 +506,7 @@ export function FolderDetail({ folderId, onNavigate, user }: FolderDetailProps) 
                   setViewerOpen(false);
                   setSelectedDocument(null);
                 }}
+                onTagsChanged={loadFolderAndDocuments}
             />
         )}
       </div>

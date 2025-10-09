@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GalleryThumbnail } from './GalleryThumbnail';
 import { GalleryDetail } from './GalleryDetail';
 import { GalleryManagement } from './GalleryManagement';
@@ -8,7 +7,7 @@ import { TagFilter } from './TagFilter';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Plus, Settings, Tag, Image, Loader2 } from 'lucide-react';
+import { Plus, Settings, Tag, Image, Loader2, Pin } from 'lucide-react';
 import { useTagContext } from './TagContext';
 import { galleryService } from '../services/firebaseService';
 import { FirebaseGallery } from '../types/firebase';
@@ -26,9 +25,11 @@ interface User {
 interface ReferencesPageProps {
   user: User | null;
   onBack?: () => void;
+  selectedGalleryId?: string | null;
+  selectedImageId?: string | null;
 }
 
-export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
+export function ReferencesPage({ user, onBack, selectedGalleryId, selectedImageId }: ReferencesPageProps) {
   const { getItemsByTags, syncItemTags } = useTagContext();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [galleries, setGalleries] = useState<FirebaseGallery[]>([]);
@@ -45,6 +46,16 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
       loadGalleries();
     }
   }, [user]);
+
+  // Handle selectedGalleryId prop to auto-open a gallery
+  useEffect(() => {
+    if (selectedGalleryId && galleries.length > 0) {
+      const gallery = galleries.find(g => g.id === selectedGalleryId);
+      if (gallery) {
+        setSelectedGallery(gallery);
+      }
+    }
+  }, [selectedGalleryId, galleries]);
 
   const loadGalleries = async () => {
     if (!user) return [];
@@ -195,6 +206,38 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
     setSelectedTagIds([]);
   };
 
+  const handlePinGallery = async (galleryId: string) => {
+    if (!user) return;
+
+    try {
+      await galleryService.pinGallery(galleryId, user.uid, 'references');
+      await loadGalleries();
+      toast.success('Gallery pinned successfully!');
+    } catch (error: any) {
+      console.error('Error pinning gallery:', error);
+      // Show a more prominent error message for the pin limit
+      if (error.message && error.message.includes('Maximum of 3')) {
+        toast.error(error.message, {
+          duration: 5000,
+          description: 'You can only pin up to 3 galleries at a time.'
+        });
+      } else {
+        toast.error(error.message || 'Failed to pin gallery');
+      }
+    }
+  };
+
+  const handleUnpinGallery = async (galleryId: string) => {
+    try {
+      await galleryService.unpinGallery(galleryId);
+      await loadGalleries();
+      toast.success('Gallery unpinned!');
+    } catch (error: any) {
+      console.error('Error unpinning gallery:', error);
+      toast.error('Failed to unpin gallery');
+    }
+  };
+
   // Filter galleries based on selected tags (check both gallery tags and image tags)
   const filteredGalleries = selectedTagIds.length > 0
       ? galleries.filter(gallery => {
@@ -207,6 +250,21 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
         return hasGalleryTag || hasImageTag;
       })
       : galleries;
+
+  // Sort galleries: pinned first (by pinnedOrder), then by createdAt
+  const sortedGalleries = [...filteredGalleries].sort((a, b) => {
+    // Pinned galleries come first
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+
+    // Both pinned: sort by pinnedOrder
+    if (a.pinned && b.pinned) {
+      return (a.pinnedOrder ?? 0) - (b.pinnedOrder ?? 0);
+    }
+
+    // Both unpinned: sort by createdAt (most recent first)
+    return b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime();
+  });
 
   // Show loading state
   if (!user) {
@@ -252,6 +310,7 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
             onDeleteImage={(index) => handleDeleteImage(selectedGallery.id, index)}
             onTitleChange={(newTitle) => handleTitleChange(selectedGallery.id, newTitle)}
             onTagsChanged={handleTagsChanged}
+            selectedImageId={selectedImageId}
         />
     );
   }
@@ -352,19 +411,41 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 gallery-grid">
-          {filteredGalleries.map((gallery) => (
-              <GalleryThumbnail
-                  key={gallery.id}
-                  title={gallery.name}
-                  images={gallery.images.map(img => img.downloadURL)}
-                  imageCount={gallery.images.length}
-                  onClick={() => setSelectedGallery(gallery)}
-                  galleryId={gallery.id}
-              />
+          {sortedGalleries.map((gallery) => (
+              <div key={gallery.id} className="relative">
+                <GalleryThumbnail
+                    title={gallery.name}
+                    images={gallery.images.map(img => img.downloadURL)}
+                    imageCount={gallery.images.length}
+                    onClick={() => setSelectedGallery(gallery)}
+                    galleryId={gallery.id}
+                />
+                <Button
+                    size="sm"
+                    variant={gallery.pinned ? "default" : "outline"}
+                    className="absolute top-2 right-2 h-8 w-8 p-0 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (gallery.pinned) {
+                        handleUnpinGallery(gallery.id);
+                      } else {
+                        handlePinGallery(gallery.id);
+                      }
+                    }}
+                    title={gallery.pinned ? "Unpin gallery" : "Pin gallery"}
+                >
+                  <Pin className={`h-4 w-4 ${gallery.pinned ? 'fill-current' : ''}`} />
+                </Button>
+                {gallery.pinned && (
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md z-10">
+                      Pinned
+                    </div>
+                )}
+              </div>
           ))}
         </div>
 
-        {filteredGalleries.length === 0 && selectedTagIds.length > 0 && (
+        {sortedGalleries.length === 0 && selectedTagIds.length > 0 && (
             <div className="text-center py-12">
               <Image className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No galleries match your tag filter</h3>
@@ -377,7 +458,7 @@ export function ReferencesPage({ user, onBack }: ReferencesPageProps) {
             </div>
         )}
 
-        {filteredGalleries.length === 0 && selectedTagIds.length === 0 && (
+        {sortedGalleries.length === 0 && selectedTagIds.length === 0 && (
             <div className="text-center py-12">
               <Image className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No reference galleries yet</h3>

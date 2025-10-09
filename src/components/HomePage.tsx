@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { RecentUploads } from './RecentUploads';
+import { PinnedGalleries } from './PinnedGalleries';
 import { BookOpen, Image, ArrowRight, FileText, LogIn, UserPlus } from 'lucide-react';
 
 interface User {
@@ -14,7 +15,7 @@ interface User {
 }
 
 interface HomePageProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, id?: string, additionalParams?: { imageId?: string; documentId?: string }) => void;
   user?: User | null;
 }
 
@@ -125,9 +126,12 @@ export function HomePage({ onNavigate, user }: HomePageProps) {
         </div>
 
         {user && (
-            <div className="max-w-6xl mx-auto">
-              <RecentUploads onNavigate={onNavigate} user={user} />
-            </div>
+            <>
+              <PinnedGalleries onNavigate={onNavigate} user={user} />
+              <div className="max-w-6xl mx-auto">
+                <RecentUploads onNavigate={onNavigate} user={user} />
+              </div>
+            </>
         )}
 
         <div className="text-center">

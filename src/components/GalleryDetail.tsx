@@ -26,9 +26,10 @@ interface GalleryDetailProps {
   onTitleChange?: (newTitle: string) => void;
   onImageRename?: (index: number, newName: string) => void;
   onTagsChanged?: () => void; // Callback when tags are added/removed from images
+  selectedImageId?: string | null; // Auto-open specific image
 }
 
-export function GalleryDetail({ title, images, imageNames: propImageNames, imageIds, galleryId = 'default', onBack, onFilesUploaded, onDeleteImage, onTitleChange, onImageRename, onTagsChanged }: GalleryDetailProps) {
+export function GalleryDetail({ title, images, imageNames: propImageNames, imageIds, galleryId = 'default', onBack, onFilesUploaded, onDeleteImage, onTitleChange, onImageRename, onTagsChanged, selectedImageId }: GalleryDetailProps) {
   const { addUpload } = useUploads();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
@@ -48,6 +49,17 @@ export function GalleryDetail({ title, images, imageNames: propImageNames, image
       setImageNames(propImageNames);
     }
   }, [propImageNames]);
+
+  // Auto-open image viewer if selectedImageId is provided
+  React.useEffect(() => {
+    if (selectedImageId && imageIds) {
+      const index = imageIds.findIndex(id => id === selectedImageId);
+      if (index !== -1) {
+        setCurrentImageIndex(index);
+        setViewerOpen(true);
+      }
+    }
+  }, [selectedImageId, imageIds]);
 
   const handleTitleSave = () => {
     if (editTitle.trim() && onTitleChange) {

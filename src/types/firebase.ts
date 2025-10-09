@@ -22,6 +22,8 @@ export interface FirebaseGallery {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   isPublic: boolean;
+  pinned?: boolean;
+  pinnedOrder?: number; // 0, 1, 2 for up to 3 pinned items
 }
 
 export interface FirebaseImage {
@@ -59,6 +61,8 @@ export interface FirebaseFolder {
   tags: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  pinned?: boolean;
+  pinnedOrder?: number; // 0, 1, 2 for up to 3 pinned items
 }
 
 export interface FirebaseTag {

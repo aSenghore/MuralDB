@@ -19,7 +19,7 @@ interface User {
 }
 
 interface RecentUploadsProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, id?: string, additionalParams?: { imageId?: string; documentId?: string }) => void;
   user: User;
 }
 
@@ -110,9 +110,12 @@ export function RecentUploads({ onNavigate, user }: RecentUploadsProps) {
       // Check gallery type to navigate to correct page
       const imageFile = file as FirebaseImage & { galleryType?: 'references' | 'art' };
       const targetPage = imageFile.galleryType === 'references' ? 'references' : 'art';
-      onNavigate(targetPage);
+      // Navigate with gallery ID and image ID to open the specific gallery and select the image
+      onNavigate(targetPage, imageFile.galleryId, { imageId: imageFile.id });
     } else {
-      onNavigate('documents'); // Documents go to documents page
+      // For documents, navigate to the folder detail with the document selected
+      const docFile = file as FirebaseDocument;
+      onNavigate('documents', docFile.folderId, { documentId: docFile.id });
     }
   };
 
@@ -158,7 +161,6 @@ export function RecentUploads({ onNavigate, user }: RecentUploadsProps) {
     );
   }
 
-  // @ts-ignore
   return (
       <Card>
         <CardHeader>

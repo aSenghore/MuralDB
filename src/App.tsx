@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Layout } from './components/Layout';
 import { HomePage } from './components/HomePage';
 import { ReferencesPage } from './components/ReferencesPage';
@@ -20,14 +19,37 @@ function AppContent() {
   const { currentUser, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [selectedGalleryId, setSelectedGalleryId] = useState<string | null>(null);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
-  const handleNavigate = (page: string, folderId?: string) => {
-    if (page === 'folder-detail' && folderId) {
-      setSelectedFolderId(folderId);
+  const handleNavigate = (page: string, id?: string, additionalParams?: { imageId?: string; documentId?: string }) => {
+    if (page === 'folder-detail' && id) {
+      setSelectedFolderId(id);
+      setSelectedDocumentId(additionalParams?.documentId || null);
       setCurrentPage('folder-detail');
+      setSelectedGalleryId(null);
+      setSelectedImageId(null);
+    } else if ((page === 'references' || page === 'art') && id) {
+      // Navigate to a specific gallery
+      setSelectedGalleryId(id);
+      setSelectedImageId(additionalParams?.imageId || null);
+      setCurrentPage(page as PageType);
+      setSelectedFolderId(null);
+      setSelectedDocumentId(null);
+    } else if (page === 'documents' && id) {
+      // Navigate to a specific document within a folder
+      setSelectedFolderId(id);
+      setSelectedDocumentId(additionalParams?.documentId || null);
+      setCurrentPage('folder-detail');
+      setSelectedGalleryId(null);
+      setSelectedImageId(null);
     } else {
       setCurrentPage(page as PageType);
       setSelectedFolderId(null);
+      setSelectedGalleryId(null);
+      setSelectedImageId(null);
+      setSelectedDocumentId(null);
     }
   };
 
@@ -45,9 +67,9 @@ function AppContent() {
       case 'home':
         return <HomePage onNavigate={handleNavigate} user={currentUser} />;
       case 'references':
-        return <ReferencesPage user={currentUser} />;
+        return <ReferencesPage user={currentUser} selectedGalleryId={selectedGalleryId} selectedImageId={selectedImageId} />;
       case 'art':
-        return <ArtPhotosPage user={currentUser} />;
+        return <ArtPhotosPage user={currentUser} selectedGalleryId={selectedGalleryId} selectedImageId={selectedImageId} />;
       case 'documents':
         return <DocumentsPage onNavigate={handleNavigate} user={currentUser} />;
       case 'tools':
@@ -60,6 +82,7 @@ function AppContent() {
                 folderId={selectedFolderId}
                 onNavigate={handleNavigate}
                 user={currentUser}
+                selectedDocumentId={selectedDocumentId}
             />
         ) : (
             <DocumentsPage onNavigate={handleNavigate} user={currentUser} />

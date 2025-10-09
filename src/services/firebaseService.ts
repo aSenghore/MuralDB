@@ -192,6 +192,94 @@ export const galleryService = {
       console.error('Error updating image tags:', error);
       throw error;
     }
+  },
+
+  // Pin gallery
+  async pinGallery(galleryId: string, userId: string, type: 'references' | 'art'): Promise<void> {
+    try {
+      // Get all pinned galleries of this type for the user
+      const galleriesQuery = query(
+          collection(db, 'galleries'),
+          where('userId', '==', userId),
+          where('type', '==', type),
+          where('pinned', '==', true)
+      );
+
+      const querySnapshot = await getDocs(galleriesQuery);
+      const pinnedGalleries = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FirebaseGallery[];
+
+      // Check if we've reached the limit of 3 pinned galleries
+      if (pinnedGalleries.length >= 3 && !pinnedGalleries.find(g => g.id === galleryId)) {
+        throw new Error('Maximum of 3 pinned galleries reached. Unpin one first.');
+      }
+
+      // Find the next available pinned order
+      const usedOrders = pinnedGalleries.map(g => g.pinnedOrder ?? -1);
+      let nextOrder = 0;
+      while (usedOrders.includes(nextOrder) && nextOrder < 3) {
+        nextOrder++;
+      }
+
+      const galleryRef = doc(db, 'galleries', galleryId);
+      await updateDoc(galleryRef, {
+        pinned: true,
+        pinnedOrder: nextOrder,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error pinning gallery:', error);
+      throw error;
+    }
+  },
+
+  // Unpin gallery
+  async unpinGallery(galleryId: string): Promise<void> {
+    try {
+      const galleryRef = doc(db, 'galleries', galleryId);
+      await updateDoc(galleryRef, {
+        pinned: false,
+        pinnedOrder: null,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error unpinning gallery:', error);
+      throw error;
+    }
+  },
+
+  // Get pinned galleries
+  async getPinnedGalleries(userId: string, type?: 'references' | 'art'): Promise<FirebaseGallery[]> {
+    try {
+      let galleriesQuery;
+      if (type) {
+        galleriesQuery = query(
+            collection(db, 'galleries'),
+            where('userId', '==', userId),
+            where('type', '==', type),
+            where('pinned', '==', true),
+            orderBy('pinnedOrder', 'asc')
+        );
+      } else {
+        galleriesQuery = query(
+            collection(db, 'galleries'),
+            where('userId', '==', userId),
+            where('pinned', '==', true),
+            orderBy('pinnedOrder', 'asc')
+        );
+      }
+
+      const querySnapshot = await getDocs(galleriesQuery);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FirebaseGallery[];
+    } catch (error) {
+      console.error('Error getting pinned galleries:', error);
+      throw error;
+    }
   }
 };
 
@@ -313,6 +401,46 @@ export const documentService = {
     }
   },
 
+  // Update document content
+  async updateDocumentContent(documentId: string, content: string, fileName: string): Promise<string> {
+    try {
+      // Get the document data
+      const docRef = doc(db, 'documents', documentId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('Document not found');
+      }
+
+      const docData = docSnap.data() as FirebaseDocument;
+
+      // Create a new blob from the content
+      const blob = new Blob([content], { type: 'text/plain' });
+      const file = new File([blob], fileName, { type: 'text/plain' });
+
+      // Delete old file from storage
+      const oldStorageRef = ref(storage, docData.storageRef);
+      await deleteObject(oldStorageRef);
+
+      // Upload new content to storage
+      const newStorageRef = ref(storage, docData.storageRef);
+      const snapshot = await uploadBytes(newStorageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // Update document metadata
+      await updateDoc(docRef, {
+        downloadURL: downloadURL,
+        size: blob.size,
+        uploadedAt: Timestamp.now()
+      });
+
+      return downloadURL;
+    } catch (error) {
+      console.error('Error updating document content:', error);
+      throw error;
+    }
+  },
+
   // Delete document
   async deleteDocument(documentId: string): Promise<void> {
     try {
@@ -371,6 +499,82 @@ export const documentService = {
       });
     } catch (error) {
       console.error('Error updating folder:', error);
+      throw error;
+    }
+  },
+
+  // Pin folder
+  async pinFolder(folderId: string, userId: string): Promise<void> {
+    try {
+      // Get all pinned folders for the user
+      const foldersQuery = query(
+          collection(db, 'folders'),
+          where('userId', '==', userId),
+          where('pinned', '==', true)
+      );
+
+      const querySnapshot = await getDocs(foldersQuery);
+      const pinnedFolders = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FirebaseFolder[];
+
+      // Check if we've reached the limit of 3 pinned folders
+      if (pinnedFolders.length >= 3 && !pinnedFolders.find(f => f.id === folderId)) {
+        throw new Error('Maximum of 3 pinned folders reached. Unpin one first.');
+      }
+
+      // Find the next available pinned order
+      const usedOrders = pinnedFolders.map(f => f.pinnedOrder ?? -1);
+      let nextOrder = 0;
+      while (usedOrders.includes(nextOrder) && nextOrder < 3) {
+        nextOrder++;
+      }
+
+      const folderRef = doc(db, 'folders', folderId);
+      await updateDoc(folderRef, {
+        pinned: true,
+        pinnedOrder: nextOrder,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error pinning folder:', error);
+      throw error;
+    }
+  },
+
+  // Unpin folder
+  async unpinFolder(folderId: string): Promise<void> {
+    try {
+      const folderRef = doc(db, 'folders', folderId);
+      await updateDoc(folderRef, {
+        pinned: false,
+        pinnedOrder: null,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error unpinning folder:', error);
+      throw error;
+    }
+  },
+
+  // Get pinned folders
+  async getPinnedFolders(userId: string): Promise<FirebaseFolder[]> {
+    try {
+      const foldersQuery = query(
+          collection(db, 'folders'),
+          where('userId', '==', userId),
+          where('pinned', '==', true),
+          orderBy('pinnedOrder', 'asc')
+      );
+
+      const querySnapshot = await getDocs(foldersQuery);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FirebaseFolder[];
+    } catch (error) {
+      console.error('Error getting pinned folders:', error);
       throw error;
     }
   }
