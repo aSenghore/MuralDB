@@ -96,7 +96,7 @@ Figma was used to work on the basic UI, alongside some aspects for the site.
 
 **Sprint 2 Demo Video** (Thumbnail in progress)
 
-[![Sprint 2 Demo Video](hhttps://img.youtube.com/vi/9PK2p9vNODg/0.jpg)](youtube.com/watch?v=9PK2p9vNODg)
+[![Sprint 2 Demo Video](hhttps://img.youtube.com/vi/9PK2p9vNODg/0.jpg)](https://www.youtube.com/watch?v=9PK2p9vNODg)
 
 ## :white_check_mark: License
 This work is licensed under the [GNU General Public License](http://www.gnu.org/licenses/gpl.html). You can use it as long as aany changes/modifications you make are available for others to do so as well. Any alternative versions must be licensed under the GPL.
