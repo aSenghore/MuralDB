@@ -23,14 +23,17 @@ There are numerous resources for storing references and finding them, as well as
 2. **Gallery Pages**
     - Pages that store different galleries for users. Pages for references, created art/ photos, and uploaded documents.
     - Tags can be applied for categorization and organization.
+    - Pinning function to keep track on your most prioritized galleries.
 3. **Tags**
-    - Images and documents can be tagged for better organization site-wide/
+    - Images and documents can be tagged for better organization site-wide
+    - Tags are saved in a database, can be used to filter galleries.
+    - Cam ne designed with pre-set colors, or a custom color throguh the color picker.
 4. **Database**
     - Stores images with login information, alongside documents, profile picture, and more.
 5. **Tools**
     - A tools section dedicated to fun and helpful resources.
-    - Character prompt generator
-    - Color palette generator
+    - Character prompt generator, toggle-able parameters.
+    - Color palette generator, generates five random colors and can generate ten random shades.
     - Photo challenges in the works
 6. **Resources**
     - Contains references to helpful resources for creatives.
