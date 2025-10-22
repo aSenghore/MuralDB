@@ -127,10 +127,11 @@ export function HomePage({ onNavigate, user }: HomePageProps) {
 
         {user && (
             <>
-              <PinnedGalleries onNavigate={onNavigate} user={user} />
               <div className="max-w-6xl mx-auto">
                 <RecentUploads onNavigate={onNavigate} user={user} />
               </div>
+              <PinnedGalleries onNavigate={onNavigate} user={user} />
+
             </>
         )}
 
