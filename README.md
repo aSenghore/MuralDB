@@ -23,14 +23,17 @@ There are numerous resources for storing references and finding them, as well as
 2. **Gallery Pages**
     - Pages that store different galleries for users. Pages for references, created art/ photos, and uploaded documents.
     - Tags can be applied for categorization and organization.
+    - Pinning function to keep track on your most prioritized galleries.
 3. **Tags**
-    - Images and documents can be tagged for better organization site-wide/
+    - Images and documents can be tagged for better organization site-wide
+    - Tags are saved in a database, can be used to filter galleries.
+    - Cam ne designed with pre-set colors, or a custom color throguh the color picker.
 4. **Database**
     - Stores images with login information, alongside documents, profile picture, and more.
 5. **Tools**
     - A tools section dedicated to fun and helpful resources.
-    - Character prompt generator
-    - Color palette generator
+    - Character prompt generator, toggle-able parameters.
+    - Color palette generator, generates five random colors and can generate ten random shades.
     - Photo challenges in the works
 6. **Resources**
     - Contains references to helpful resources for creatives.
@@ -90,6 +93,10 @@ Figma was used to work on the basic UI, alongside some aspects for the site.
 **Sprint 1 Demo Video** 
 
 [![Sprint 1 Demo Video](https://img.youtube.com/vi/u89HqNRJvvA/0.jpg)](https://www.youtube.com/watch?v=u89HqNRJvvA)
+
+**Sprint 2 Demo Video** (Thumbnail in progress)
+
+[![Sprint 2 Demo Video](hhttps://img.youtube.com/vi/9PK2p9vNODg/0.jpg)](https://www.youtube.com/watch?v=9PK2p9vNODg)
 
 ## :white_check_mark: License
 This work is licensed under the [GNU General Public License](http://www.gnu.org/licenses/gpl.html). You can use it as long as aany changes/modifications you make are available for others to do so as well. Any alternative versions must be licensed under the GPL.
