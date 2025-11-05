@@ -19,7 +19,7 @@ import {
   deleteObject
 } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
-import { FirebaseGallery, FirebaseImage, FirebaseDocument, FirebaseFolder, FirebaseTag } from '../types/firebase';
+import { FirebaseGallery, FirebaseImage, FirebaseDocument, FirebaseFolder, FirebaseTag, FirebaseBookmark } from '../types/firebase';
 
 // Gallery Services
 export const galleryService = {
@@ -102,8 +102,8 @@ export const galleryService = {
   // Upload image to gallery
   async uploadImage(galleryId: string, userId: string, file: File, tags: string[] = []): Promise<FirebaseImage> {
     try {
-      // Upload file to Storage
-      const storageRef = ref(storage, `galleries/${galleryId}/${Date.now()}_${file.name}`);
+      // Upload file to Storage - path includes userId for security rule verification
+      const storageRef = ref(storage, `galleries/${userId}/${galleryId}/${Date.now()}_${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
@@ -327,6 +327,15 @@ export const galleryService = {
         showcasePinnedOrder: null,
         updatedAt: Timestamp.now()
       });
+
+      // Remove all bookmarks for this gallery
+      const bookmarksQuery = query(
+          collection(db, 'bookmarks'),
+          where('itemId', '==', galleryId)
+      );
+      const bookmarksSnapshot = await getDocs(bookmarksQuery);
+      const deletePromises = bookmarksSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
     } catch (error) {
       console.error('Error showcase unpinning gallery:', error);
       throw error;
@@ -379,7 +388,7 @@ export const documentService = {
   // Upload document
   async uploadDocument(userId: string, file: File, folderId?: string, tags: string[] = []): Promise<string> {
     try {
-      // Upload file to Storage
+      // Upload file to Storage - path includes userId for security rule verification
       const storageRef = ref(storage, `documents/${userId}/${Date.now()}_${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -674,6 +683,15 @@ export const documentService = {
         showcasePinnedOrder: null,
         updatedAt: Timestamp.now()
       });
+
+      // Remove all bookmarks for this folder
+      const bookmarksQuery = query(
+          collection(db, 'bookmarks'),
+          where('itemId', '==', folderId)
+      );
+      const bookmarksSnapshot = await getDocs(bookmarksQuery);
+      const deletePromises = bookmarksSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
     } catch (error) {
       console.error('Error showcase unpinning folder:', error);
       throw error;
@@ -792,6 +810,180 @@ export const recentUploadsService = {
     } catch (error) {
       console.error('Error getting recent uploads:', error);
       return [];
+    }
+  }
+};
+
+// Showcase Galleries Service
+export const showcaseService = {
+  // Get all showcase-pinned galleries from all users
+  async getAllShowcaseGalleries(type?: 'references' | 'art'): Promise<FirebaseGallery[]> {
+    try {
+      let q;
+      if (type) {
+        q = query(
+            collection(db, 'galleries'),
+            where('showcasePinned', '==', true),
+            where('type', '==', type),
+            orderBy('updatedAt', 'desc')
+        );
+      } else {
+        q = query(
+            collection(db, 'galleries'),
+            where('showcasePinned', '==', true),
+            orderBy('updatedAt', 'desc')
+        );
+      }
+
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as FirebaseGallery));
+    } catch (error) {
+      console.error('Error getting showcase galleries:', error);
+      return [];
+    }
+  },
+
+  // Get all showcase-pinned folders from all users
+  async getAllShowcaseFolders(): Promise<FirebaseFolder[]> {
+    try {
+      const q = query(
+          collection(db, 'folders'),
+          where('showcasePinned', '==', true),
+          orderBy('updatedAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as FirebaseFolder));
+    } catch (error) {
+      console.error('Error getting showcase folders:', error);
+      return [];
+    }
+  }
+};
+
+// Bookmark Service
+export const bookmarkService = {
+  // Create bookmark
+  async createBookmark(userId: string, itemId: string, itemType: 'gallery' | 'folder', ownerUserId: string): Promise<string> {
+    try {
+      // First check if the item is showcase pinned
+      if (itemType === 'gallery') {
+        const galleryRef = doc(db, 'galleries', itemId);
+        const galleryDoc = await getDoc(galleryRef);
+        if (!galleryDoc.exists() || !galleryDoc.data().showcasePinned) {
+          throw new Error('Can only bookmark showcase-pinned items');
+        }
+      } else {
+        const folderRef = doc(db, 'folders', itemId);
+        const folderDoc = await getDoc(folderRef);
+        if (!folderDoc.exists() || !folderDoc.data().showcasePinned) {
+          throw new Error('Can only bookmark showcase-pinned items');
+        }
+      }
+
+      // Check if bookmark already exists
+      const existingBookmarkQuery = query(
+          collection(db, 'bookmarks'),
+          where('userId', '==', userId),
+          where('itemId', '==', itemId)
+      );
+      const existingSnapshot = await getDocs(existingBookmarkQuery);
+
+      if (!existingSnapshot.empty) {
+        throw new Error('Already bookmarked');
+      }
+
+      const bookmarkData: Omit<FirebaseBookmark, 'id'> = {
+        userId,
+        itemId,
+        itemType,
+        ownerUserId,
+        createdAt: Timestamp.now()
+      };
+
+      const docRef = await addDoc(collection(db, 'bookmarks'), bookmarkData);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating bookmark:', error);
+      throw error;
+    }
+  },
+
+  // Delete bookmark
+  async deleteBookmark(userId: string, itemId: string): Promise<void> {
+    try {
+      const q = query(
+          collection(db, 'bookmarks'),
+          where('userId', '==', userId),
+          where('itemId', '==', itemId)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+    } catch (error) {
+      console.error('Error deleting bookmark:', error);
+      throw error;
+    }
+  },
+
+  // Get user's bookmarks
+  async getUserBookmarks(userId: string): Promise<FirebaseBookmark[]> {
+    try {
+      const q = query(
+          collection(db, 'bookmarks'),
+          where('userId', '==', userId),
+          orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as FirebaseBookmark));
+    } catch (error) {
+      console.error('Error getting bookmarks:', error);
+      return [];
+    }
+  },
+
+  // Check if item is bookmarked
+  async isBookmarked(userId: string, itemId: string): Promise<boolean> {
+    try {
+      const q = query(
+          collection(db, 'bookmarks'),
+          where('userId', '==', userId),
+          where('itemId', '==', itemId)
+      );
+
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Error checking bookmark:', error);
+      return false;
+    }
+  },
+
+  // Delete bookmarks for an item (when showcase pin is removed)
+  async deleteBookmarksForItem(itemId: string): Promise<void> {
+    try {
+      const q = query(
+          collection(db, 'bookmarks'),
+          where('itemId', '==', itemId)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+    } catch (error) {
+      console.error('Error deleting bookmarks for item:', error);
+      throw error;
     }
   }
 };

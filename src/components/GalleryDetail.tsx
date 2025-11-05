@@ -27,9 +27,10 @@ interface GalleryDetailProps {
   onImageRename?: (index: number, newName: string) => void;
   onTagsChanged?: () => void; // Callback when tags are added/removed from images
   selectedImageId?: string | null; // Auto-open specific image
+  readOnly?: boolean; // Read-only mode for public galleries
 }
 
-export function GalleryDetail({ title, images, imageNames: propImageNames, imageIds, galleryId = 'default', onBack, onFilesUploaded, onDeleteImage, onTitleChange, onImageRename, onTagsChanged, selectedImageId }: GalleryDetailProps) {
+export function GalleryDetail({ title, images, imageNames: propImageNames, imageIds, galleryId = 'default', onBack, onFilesUploaded, onDeleteImage, onTitleChange, onImageRename, onTagsChanged, selectedImageId, readOnly = false }: GalleryDetailProps) {
   const { addUpload } = useUploads();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
@@ -158,58 +159,64 @@ export function GalleryDetail({ title, images, imageNames: propImageNames, image
                 </div>
             )}
           </div>
-          <FileUpload
-              onFilesUploaded={(files) => {
-                // Track uploads in context
-                files.forEach(file => {
-                  const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
-                  const size = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-                  const uploadedFile = {
-                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                    name: file.name,
-                    type: 'image' as const,
-                    fileType: fileExtension,
-                    url: URL.createObjectURL(file),
-                    size,
-                    uploadDate: new Date().toISOString(),
-                    thumbnailUrl: URL.createObjectURL(file),
-                    location: `${window.location.pathname.includes('references') ? 'References' : 'Art'} > ${title}`
-                  };
-                  addUpload(uploadedFile);
-                });
-                onFilesUploaded(files);
-              }}
-              type="image"
-          />
+          {!readOnly && (
+              <FileUpload
+                  onFilesUploaded={(files) => {
+                    // Track uploads in context
+                    files.forEach(file => {
+                      const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+                      const size = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+                      const uploadedFile = {
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                        name: file.name,
+                        type: 'image' as const,
+                        fileType: fileExtension,
+                        url: URL.createObjectURL(file),
+                        size,
+                        uploadDate: new Date().toISOString(),
+                        thumbnailUrl: URL.createObjectURL(file),
+                        location: `${window.location.pathname.includes('references') ? 'References' : 'Art'} > ${title}`
+                      };
+                      addUpload(uploadedFile);
+                    });
+                    onFilesUploaded(files);
+                  }}
+                  type="image"
+              />
+          )}
         </div>
 
         {images.length === 0 ? (
             <Card className="p-12">
               <CardContent className="text-center">
-                <p className="text-muted-foreground mb-4">No images in this gallery yet.</p>
-                <FileUpload
-                    onFilesUploaded={(files) => {
-                      // Track uploads in context
-                      files.forEach(file => {
-                        const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
-                        const size = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-                        const uploadedFile = {
-                          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                          name: file.name,
-                          type: 'image' as const,
-                          fileType: fileExtension,
-                          url: URL.createObjectURL(file),
-                          size,
-                          uploadDate: new Date().toISOString(),
-                          thumbnailUrl: URL.createObjectURL(file),
-                          location: `${window.location.pathname.includes('references') ? 'References' : 'Art'} > ${title}`
-                        };
-                        addUpload(uploadedFile);
-                      });
-                      onFilesUploaded(files);
-                    }}
-                    type="image"
-                />
+                <p className="text-muted-foreground mb-4">
+                  {readOnly ? 'This gallery is empty.' : 'No images in this gallery yet.'}
+                </p>
+                {!readOnly && (
+                    <FileUpload
+                        onFilesUploaded={(files) => {
+                          // Track uploads in context
+                          files.forEach(file => {
+                            const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+                            const size = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+                            const uploadedFile = {
+                              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                              name: file.name,
+                              type: 'image' as const,
+                              fileType: fileExtension,
+                              url: URL.createObjectURL(file),
+                              size,
+                              uploadDate: new Date().toISOString(),
+                              thumbnailUrl: URL.createObjectURL(file),
+                              location: `${window.location.pathname.includes('references') ? 'References' : 'Art'} > ${title}`
+                            };
+                            addUpload(uploadedFile);
+                          });
+                          onFilesUploaded(files);
+                        }}
+                        type="image"
+                    />
+                )}
               </CardContent>
             </Card>
         ) : (
@@ -241,18 +248,20 @@ export function GalleryDetail({ title, images, imageNames: propImageNames, image
                       </div>
 
                       <div className="absolute top-1 sm:top-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 sm:gap-1">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowTagsFor(showTagsFor === index ? null : index);
-                            }}
-                            className="mobile-hover-button sm:h-8 sm:w-8 sm:p-0"
-                            title="Manage tags"
-                        >
-                          <Tag className="mobile-icon sm:h-4 sm:w-4" />
-                        </Button>
+                        {!readOnly && (
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowTagsFor(showTagsFor === index ? null : index);
+                                }}
+                                className="mobile-hover-button sm:h-8 sm:w-8 sm:p-0"
+                                title="Manage tags"
+                            >
+                              <Tag className="mobile-icon sm:h-4 sm:w-4" />
+                            </Button>
+                        )}
                         <Button
                             size="sm"
                             variant="secondary"
@@ -265,18 +274,20 @@ export function GalleryDetail({ title, images, imageNames: propImageNames, image
                         >
                           <Eye className="mobile-icon sm:h-4 sm:w-4" />
                         </Button>
-                        <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteImage(index);
-                            }}
-                            className="mobile-hover-button sm:h-8 sm:w-8 sm:p-0"
-                            title="Delete image"
-                        >
-                          <Trash2 className="mobile-icon sm:h-4 sm:w-4" />
-                        </Button>
+                        {!readOnly && (
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteImage(index);
+                                }}
+                                className="mobile-hover-button sm:h-8 sm:w-8 sm:p-0"
+                                title="Delete image"
+                            >
+                              <Trash2 className="mobile-icon sm:h-4 sm:w-4" />
+                            </Button>
+                        )}
                       </div>
 
                       <div className="image-info sm:p-3">

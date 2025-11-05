@@ -76,3 +76,12 @@ export interface FirebaseTag {
   userId: string;
   createdAt: Timestamp;
 }
+
+export interface FirebaseBookmark {
+  id: string;
+  userId: string; // User who bookmarked
+  itemId: string; // Gallery or Folder ID
+  itemType: 'gallery' | 'folder'; // Type of item bookmarked
+  ownerUserId: string; // Owner of the bookmarked item
+  createdAt: Timestamp;
+}

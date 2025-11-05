@@ -1,5 +1,9 @@
 # 🔥 Firebase Setup Instructions for MuralDB
 
+> **⚠️ IMPORTANT:** After completing the initial setup, you MUST update the Firestore and Storage security rules as shown in Step 8 below. The showcase pin and bookmarks features will not work without these updated rules.
+
+> **📝 NOTE FOR EXISTING USERS:** If you already have images uploaded, see `STORAGE_PATH_UPDATE.md` for important information about the storage path structure update.
+
 ## Step 1: Create Firebase Project
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
@@ -51,12 +55,12 @@ import { getStorage } from 'firebase/storage';
 
 // Replace with YOUR actual Firebase config
 const firebaseConfig = {
-  apiKey: "your-actual-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-actual-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "your-messaging-sender-id",
-  appId: "your-actual-app-id"
+apiKey: "your-actual-api-key",
+authDomain: "your-project.firebaseapp.com",
+projectId: "your-actual-project-id",
+storageBucket: "your-project.appspot.com",
+messagingSenderId: "your-messaging-sender-id",
+appId: "your-actual-app-id"
 };
 
 // Initialize Firebase
@@ -78,67 +82,91 @@ Make sure you have Firebase installed in your project:
 npm install firebase
 \`\`\`
 
-## Step 8: Security Rules (Optional but Recommended)
+## Step 8: Security Rules ⚠️ REQUIRED
+
+> **CRITICAL:** These security rules are REQUIRED for showcase pins, bookmarks, and public galleries to work properly. Without these rules, you will get "permission-denied" errors.
 
 ### Firestore Rules
-Go to **Firestore Database > Rules** and replace with:
+Go to **Firestore Database > Rules** in Firebase Console and replace the entire content with:
 
 \`\`\`javascript
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can only read/write their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Galleries - users can only access their own
+match /databases/{database}/documents {
+// Users can only read/write their own data
+match /users/{userId} {
+allow read, write: if request.auth != null && request.auth.uid == userId;
+}
+
+    // Galleries - users can access their own galleries, and anyone can read showcase pinned galleries
     match /galleries/{galleryId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        resource.data.showcasePinned == true
+      );
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
     // Documents - users can only access their own
     match /documents/{documentId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
-    // Folders - users can only access their own
+    // Folders - users can access their own folders, and anyone can read showcase pinned folders
     match /folders/{folderId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        resource.data.showcasePinned == true
+      );
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
     // Tags - users can only access their own
     match /tags/{tagId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-  }
+    
+    // Bookmarks - users can only access their own bookmarks
+    match /bookmarks/{bookmarkId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+}
 }
 \`\`\`
 
 ### Storage Rules
-Go to **Storage > Rules** and replace with:
+Go to **Storage > Rules** in Firebase Console and replace the entire content with:
 
 \`\`\`javascript
 rules_version = '2';
 service firebase.storage {
-  match /b/{bucket}/o {
-    // Users can only upload/access their own files
-    match /galleries/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
+match /b/{bucket}/o {
+// Galleries - allow authenticated users to read (showcase functionality), but only owners can write
+match /galleries/{userId}/{allPaths=**} {
+allow read: if request.auth != null;
+allow write: if request.auth != null && request.auth.uid == userId;
+}
+
+    // Documents - allow authenticated users to read (showcase functionality), but only owners can write
     match /documents/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Profile pictures - anyone can read, but only owner can write
     match /profile-pictures/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
-  }
+}
 }
 \`\`\`
 
@@ -147,8 +175,43 @@ service firebase.storage {
 1. Start your development server
 2. Try to sign up with a new account
 3. Check Firebase Console to see if:
-   - User appears in **Authentication > Users**
-   - User document is created in **Firestore Database**
+    - User appears in **Authentication > Users**
+    - User document is created in **Firestore Database**
+
+## Troubleshooting Permission Errors
+
+If you're getting "permission-denied" errors, verify the following:
+
+### For Showcase Pin/Unpin Errors:
+1. Go to **Firestore Database > Rules** in Firebase Console
+2. Verify that galleries and folders have these specific rules:
+   ```
+   allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+   ```
+3. Click **Publish** to apply the rules
+
+### For Bookmark Errors:
+1. Ensure the bookmarks collection rule exists:
+   ```
+   match /bookmarks/{bookmarkId} {
+     allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+     allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+     allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+   }
+   ```
+
+### For Public Gallery/Folder Viewing Errors:
+1. Verify galleries and folders allow reading showcase items:
+   ```
+   allow read: if request.auth != null && (
+     request.auth.uid == resource.data.userId ||
+     resource.data.showcasePinned == true
+   );
+   ```
+2. Verify Storage rules allow authenticated users to read all files:
+   ```
+   allow read: if request.auth != null;
+   ```
 
 ## Firestore Database Structure
 
@@ -156,60 +219,60 @@ Your database will automatically create these collections:
 
 \`\`\`
 /users/{userId}
-  - uid: string
-  - email: string  
-  - firstName: string
-  - lastName: string
-  - screenName: string
-  - profilePicture?: string
-  - createdAt: timestamp
-  - updatedAt: timestamp
+- uid: string
+- email: string
+- firstName: string
+- lastName: string
+- screenName: string
+- profilePicture?: string
+- createdAt: timestamp
+- updatedAt: timestamp
 
 /galleries/{galleryId}
-  - id: string
-  - name: string
-  - description: string
-  - userId: string
-  - images: array
-  - tags: array
-  - createdAt: timestamp
-  - updatedAt: timestamp
-  - isPublic: boolean
+- id: string
+- name: string
+- description: string
+- userId: string
+- images: array
+- tags: array
+- createdAt: timestamp
+- updatedAt: timestamp
+- isPublic: boolean
 
 /documents/{documentId}
-  - id: string
-  - name: string
-  - url: string
-  - storageRef: string
-  - size: number
-  - type: string
-  - folderId?: string
-  - userId: string
-  - tags: array
-  - uploadedAt: timestamp
+- id: string
+- name: string
+- url: string
+- storageRef: string
+- size: number
+- type: string
+- folderId?: string
+- userId: string
+- tags: array
+- uploadedAt: timestamp
 
 /folders/{folderId}
-  - id: string
-  - name: string
-  - description?: string
-  - userId: string
-  - documents: array
-  - createdAt: timestamp
-  - updatedAt: timestamp
+- id: string
+- name: string
+- description?: string
+- userId: string
+- documents: array
+- createdAt: timestamp
+- updatedAt: timestamp
 
 /tags/{tagId}
-  - id: string
-  - name: string
-  - color: string
-  - userId: string
-  - createdAt: timestamp
-\`\`\`
+- id: string
+- name: string
+- color: string
+- userId: string
+- createdAt: timestamp
+  \`\`\`
 
 ## Storage Structure
 
 Files will be organized as:
 \`\`\`
-/galleries/{userId}/{timestamp}_{filename}
+/galleries/{userId}/{galleryId}/{timestamp}_{filename}
 /documents/{userId}/{timestamp}_{filename}  
 /profile-pictures/{userId}
 \`\`\`

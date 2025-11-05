@@ -75,7 +75,7 @@ Your MuralDB application now has **complete Firebase integration**. Here's every
 ### **Firebase Storage Structure**
 ```
 /profile-pictures/{userId}
-/galleries/{galleryId}/{timestamp}_{filename}
+/galleries/{userId}/{galleryId}/{timestamp}_{filename}
 /documents/{userId}/{timestamp}_{filename}
 ```
 
@@ -155,7 +155,7 @@ const firebaseConfig = {
 1. ✅ Sign up and create an account
 2. ✅ Upload and manage profile pictures
 3. ✅ Create reference galleries
-4. ✅ Create art galleries  
+4. ✅ Create art galleries
 5. ✅ Upload images to galleries
 6. ✅ Delete images from galleries
 7. ✅ Create document folders

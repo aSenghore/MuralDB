@@ -6,7 +6,8 @@ import { ArtPhotosPage } from './components/ArtPhotosPage';
 import { DocumentsPage } from './components/DocumentsPage';
 import { ToolsPage } from './components/ToolsPage';
 import { ResourcesPage } from './components/ResourcesPage';
-import {CollaborationsPage} from './components/CollaborationsPage';
+import { PublicGalleriesPage } from './components/PublicGalleriesPage';
+import { BookmarksPage } from './components/BookmarksPage';
 import { FolderDetail } from './components/FolderDetail';
 import { LoginPage } from './components/LoginPage';
 import { UserProfilePage } from './components/UserProfilePage';
@@ -15,7 +16,7 @@ import { TagProvider } from './components/TagContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from 'sonner';
 
-type PageType = 'home' | 'references' | 'art' | 'documents' | 'tools' | 'resources' | 'public' | 'folder-detail' | 'login' | 'profile';
+type PageType = 'home' | 'references' | 'art' | 'documents' | 'tools' | 'resources' | 'public' | 'bookmarks' | 'folder-detail' | 'login' | 'profile';
 
 function AppContent() {
   const { currentUser, logout } = useAuth();
@@ -79,7 +80,9 @@ function AppContent() {
       case 'resources':
         return <ResourcesPage />;
       case 'public':
-        return <CollaborationsPage user={currentUser} />;
+        return <PublicGalleriesPage user={currentUser} />;
+      case 'bookmarks':
+        return <BookmarksPage user={currentUser} />;
       case 'folder-detail':
         return selectedFolderId ? (
             <FolderDetail

@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -246,6 +245,7 @@ export function FolderManagement({ folders, onSelectFolder, onBack, user, onFold
                             showAddButton={isManaging}
                             size="sm"
                             className="mt-2"
+                            onTagsChanged={onFoldersChange}
                         />
                       </>
                   )}

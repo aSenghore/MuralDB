@@ -32,9 +32,11 @@ interface FolderDetailProps {
   onNavigate: (page: string) => void;
   user: User | null;
   selectedDocumentId?: string | null;
+  readOnly?: boolean; // Read-only mode for public folders
+  ownerUserId?: string; // Owner of the folder (for public viewing)
 }
 
-export function FolderDetail({ folderId, onNavigate, user, selectedDocumentId }: FolderDetailProps) {
+export function FolderDetail({ folderId, onNavigate, user, selectedDocumentId, readOnly = false, ownerUserId }: FolderDetailProps) {
   const { getItemsByTags, syncItemTags } = useTagContext();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [folder, setFolder] = useState<FirebaseFolder | null>(null);
@@ -51,18 +53,20 @@ export function FolderDetail({ folderId, onNavigate, user, selectedDocumentId }:
 
   // Load folder and documents
   useEffect(() => {
-    if (user) {
+    if (user || ownerUserId) {
       loadFolderAndDocuments();
     }
-  }, [folderId, user]);
+  }, [folderId, user, ownerUserId]);
 
   const loadFolderAndDocuments = async () => {
-    if (!user) return;
+    // For read-only mode, we need ownerUserId; for regular mode, we need user
+    const userId = readOnly ? ownerUserId : user?.uid;
+    if (!userId) return;
 
     try {
       const [userFolders, userDocuments] = await Promise.all([
-        documentService.getUserFolders(user.uid),
-        documentService.getUserDocuments(user.uid)
+        documentService.getUserFolders(userId),
+        documentService.getUserDocuments(userId)
       ]);
 
       const currentFolder = userFolders.find(f => f.id === folderId);
@@ -283,13 +287,15 @@ export function FolderDetail({ folderId, onNavigate, user, selectedDocumentId }:
               ) : (
                   <div className="flex items-center gap-2">
                     <h1 className="text-3xl font-medium">{folder.name}</h1>
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setIsEditingTitle(true)}
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </Button>
+                    {!readOnly && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingTitle(true)}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                    )}
                   </div>
               )}
 
@@ -329,53 +335,59 @@ export function FolderDetail({ folderId, onNavigate, user, selectedDocumentId }:
                     <p className="text-muted-foreground">
                       {folder.description || 'No description'}
                     </p>
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setIsEditingDescription(true)}
-                        className="h-6 w-6 p-0"
-                    >
-                      <Edit3 className="h-3 w-3" />
-                    </Button>
+                    {!readOnly && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingDescription(true)}
+                            className="h-6 w-6 p-0"
+                        >
+                          <Edit3 className="h-3 w-3" />
+                        </Button>
+                    )}
                   </div>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <TagManager>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Tag className="h-4 w-4" />
-                Tags
-              </Button>
-            </TagManager>
-            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Upload className="h-4 w-4" />
-                  Upload Documents
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Upload Documents</DialogTitle>
-                  <DialogDescription>
-                    Upload documents to this folder
-                  </DialogDescription>
-                </DialogHeader>
-                <FileUpload
-                    onFilesUploaded={handleUpload}
-                    type="document"
-                    multiple={true}
-                />
-                {isUploading && (
-                    <div className="text-center py-4">
-                      <Loader2 className="h-6 w-6 mx-auto animate-spin mb-2" />
-                      <p className="text-sm text-muted-foreground">Uploading...</p>
-                    </div>
-                )}
-              </DialogContent>
-            </Dialog>
+            {!readOnly && (
+                <>
+                  <TagManager>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Tag className="h-4 w-4" />
+                      Tags
+                    </Button>
+                  </TagManager>
+                  <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="gap-2">
+                        <Upload className="h-4 w-4" />
+                        Upload Documents
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Upload Documents</DialogTitle>
+                        <DialogDescription>
+                          Upload documents to this folder
+                        </DialogDescription>
+                      </DialogHeader>
+                      <FileUpload
+                          onFilesUploaded={handleUpload}
+                          type="document"
+                          multiple={true}
+                      />
+                      {isUploading && (
+                          <div className="text-center py-4">
+                            <Loader2 className="h-6 w-6 mx-auto animate-spin mb-2" />
+                            <p className="text-sm text-muted-foreground">Uploading...</p>
+                          </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                </>
+            )}
           </div>
         </div>
 
