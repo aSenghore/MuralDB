@@ -24,6 +24,8 @@ export interface FirebaseGallery {
   isPublic: boolean;
   pinned?: boolean;
   pinnedOrder?: number; // 0, 1, 2 for up to 3 pinned items
+  showcasePinned?: boolean; // Separate showcase pin
+  showcasePinnedOrder?: number; // Order for showcase pins
 }
 
 export interface FirebaseImage {
@@ -63,6 +65,8 @@ export interface FirebaseFolder {
   updatedAt: Timestamp;
   pinned?: boolean;
   pinnedOrder?: number; // 0, 1, 2 for up to 3 pinned items
+  showcasePinned?: boolean; // Separate showcase pin
+  showcasePinnedOrder?: number; // Order for showcase pins
 }
 
 export interface FirebaseTag {

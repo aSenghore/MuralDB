@@ -280,6 +280,57 @@ export const galleryService = {
       console.error('Error getting pinned galleries:', error);
       throw error;
     }
+  },
+
+  // Showcase pin gallery (separate from regular pins, no limit check needed)
+  async showcasePinGallery(galleryId: string, userId: string, type: 'references' | 'art'): Promise<void> {
+    try {
+      // Get all showcase pinned galleries of this type for the user
+      const galleriesQuery = query(
+          collection(db, 'galleries'),
+          where('userId', '==', userId),
+          where('type', '==', type),
+          where('showcasePinned', '==', true)
+      );
+
+      const querySnapshot = await getDocs(galleriesQuery);
+      const showcasePinnedGalleries = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FirebaseGallery[];
+
+      // Find the next available showcase pinned order
+      const usedOrders = showcasePinnedGalleries.map(g => g.showcasePinnedOrder ?? -1);
+      let nextOrder = 0;
+      while (usedOrders.includes(nextOrder)) {
+        nextOrder++;
+      }
+
+      const galleryRef = doc(db, 'galleries', galleryId);
+      await updateDoc(galleryRef, {
+        showcasePinned: true,
+        showcasePinnedOrder: nextOrder,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error showcase pinning gallery:', error);
+      throw error;
+    }
+  },
+
+  // Unpin showcase gallery
+  async showcaseUnpinGallery(galleryId: string): Promise<void> {
+    try {
+      const galleryRef = doc(db, 'galleries', galleryId);
+      await updateDoc(galleryRef, {
+        showcasePinned: false,
+        showcasePinnedOrder: null,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error showcase unpinning gallery:', error);
+      throw error;
+    }
   }
 };
 
@@ -575,6 +626,56 @@ export const documentService = {
       })) as FirebaseFolder[];
     } catch (error) {
       console.error('Error getting pinned folders:', error);
+      throw error;
+    }
+  },
+
+  // Showcase pin folder (separate from regular pins, no limit check needed)
+  async showcasePinFolder(folderId: string, userId: string): Promise<void> {
+    try {
+      // Get all showcase pinned folders for the user
+      const foldersQuery = query(
+          collection(db, 'folders'),
+          where('userId', '==', userId),
+          where('showcasePinned', '==', true)
+      );
+
+      const querySnapshot = await getDocs(foldersQuery);
+      const showcasePinnedFolders = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FirebaseFolder[];
+
+      // Find the next available showcase pinned order
+      const usedOrders = showcasePinnedFolders.map(f => f.showcasePinnedOrder ?? -1);
+      let nextOrder = 0;
+      while (usedOrders.includes(nextOrder)) {
+        nextOrder++;
+      }
+
+      const folderRef = doc(db, 'folders', folderId);
+      await updateDoc(folderRef, {
+        showcasePinned: true,
+        showcasePinnedOrder: nextOrder,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error showcase pinning folder:', error);
+      throw error;
+    }
+  },
+
+  // Unpin showcase folder
+  async showcaseUnpinFolder(folderId: string): Promise<void> {
+    try {
+      const folderRef = doc(db, 'folders', folderId);
+      await updateDoc(folderRef, {
+        showcasePinned: false,
+        showcasePinnedOrder: null,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error showcase unpinning folder:', error);
       throw error;
     }
   }

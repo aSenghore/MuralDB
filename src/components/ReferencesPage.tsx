@@ -238,6 +238,30 @@ export function ReferencesPage({ user, onBack, selectedGalleryId, selectedImageI
     }
   };
 
+  const handleShowcasePinGallery = async (galleryId: string) => {
+    if (!user) return;
+
+    try {
+      await galleryService.showcasePinGallery(galleryId, user.uid, 'references');
+      await loadGalleries();
+      toast.success('Gallery showcase pinned!');
+    } catch (error: any) {
+      console.error('Error showcase pinning gallery:', error);
+      toast.error(error.message || 'Failed to showcase pin gallery');
+    }
+  };
+
+  const handleShowcaseUnpinGallery = async (galleryId: string) => {
+    try {
+      await galleryService.showcaseUnpinGallery(galleryId);
+      await loadGalleries();
+      toast.success('Gallery showcase unpinned!');
+    } catch (error: any) {
+      console.error('Error showcase unpinning gallery:', error);
+      toast.error('Failed to showcase unpin gallery');
+    }
+  };
+
   // Filter galleries based on selected tags (check both gallery tags and image tags)
   const filteredGalleries = selectedTagIds.length > 0
       ? galleries.filter(gallery => {
@@ -420,23 +444,60 @@ export function ReferencesPage({ user, onBack, selectedGalleryId, selectedImageI
                     onClick={() => setSelectedGallery(gallery)}
                     galleryId={gallery.id}
                 />
-                <Button
-                    size="sm"
-                    variant={gallery.pinned ? "default" : "outline"}
-                    className="absolute top-2 right-2 h-8 w-8 p-0 z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (gallery.pinned) {
-                        handleUnpinGallery(gallery.id);
-                      } else {
-                        handlePinGallery(gallery.id);
-                      }
-                    }}
-                    title={gallery.pinned ? "Unpin gallery" : "Pin gallery"}
-                >
-                  <Pin className={`h-4 w-4 ${gallery.pinned ? 'fill-current' : ''}`} />
-                </Button>
-                {gallery.pinned && (
+                <div className="absolute top-2 right-2 flex gap-1 z-10">
+                  <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0 border-2"
+                      style={gallery.showcasePinned ? {
+                        backgroundColor: '#dc2626',
+                        borderColor: '#dc2626',
+                        color: 'white'
+                      } : {
+                        borderColor: '#fca5a5',
+                        color: '#dc2626'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (gallery.showcasePinned) {
+                          handleShowcaseUnpinGallery(gallery.id);
+                        } else {
+                          handleShowcasePinGallery(gallery.id);
+                        }
+                      }}
+                      title={gallery.showcasePinned ? "Remove showcase pin" : "Showcase pin"}
+                  >
+                    <Pin className={`h-4 w-4 ${gallery.showcasePinned ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button
+                      size="sm"
+                      variant={gallery.pinned ? "default" : "outline"}
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (gallery.pinned) {
+                          handleUnpinGallery(gallery.id);
+                        } else {
+                          handlePinGallery(gallery.id);
+                        }
+                      }}
+                      title={gallery.pinned ? "Unpin gallery" : "Pin gallery"}
+                  >
+                    <Pin className={`h-4 w-4 ${gallery.pinned ? 'fill-current' : ''}`} />
+                  </Button>
+                </div>
+                {gallery.showcasePinned && (
+                    <div
+                        className="absolute top-2 left-2 text-xs px-2 py-1 rounded-md z-10"
+                        style={{
+                          backgroundColor: '#dc2626',
+                          color: 'white'
+                        }}
+                    >
+                      Showcase
+                    </div>
+                )}
+                {gallery.pinned && !gallery.showcasePinned && (
                     <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md z-10">
                       Pinned
                     </div>

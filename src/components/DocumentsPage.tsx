@@ -161,6 +161,30 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
     }
   };
 
+  const handleShowcasePinFolder = async (folderId: string) => {
+    if (!user) return;
+
+    try {
+      await documentService.showcasePinFolder(folderId, user.uid);
+      await loadFoldersAndDocuments();
+      toast.success('Folder showcase pinned!');
+    } catch (error: any) {
+      console.error('Error showcase pinning folder:', error);
+      toast.error(error.message || 'Failed to showcase pin folder');
+    }
+  };
+
+  const handleShowcaseUnpinFolder = async (folderId: string) => {
+    try {
+      await documentService.showcaseUnpinFolder(folderId);
+      await loadFoldersAndDocuments();
+      toast.success('Folder showcase unpinned!');
+    } catch (error: any) {
+      console.error('Error showcase unpinning folder:', error);
+      toast.error('Failed to showcase unpin folder');
+    }
+  };
+
   // Filter folders based on selected tags (check both folder tags and document tags)
   const filteredFolders = selectedTagIds.length > 0
       ? folders.filter(folder => {
@@ -365,23 +389,60 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
                     />
                   </CardHeader>
                 </Card>
-                <Button
-                    size="sm"
-                    variant={folder.pinned ? "default" : "outline"}
-                    className="absolute top-2 right-2 h-8 w-8 p-0 z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (folder.pinned) {
-                        handleUnpinFolder(folder.id);
-                      } else {
-                        handlePinFolder(folder.id);
-                      }
-                    }}
-                    title={folder.pinned ? "Unpin folder" : "Pin folder"}
-                >
-                  <Pin className={`h-4 w-4 ${folder.pinned ? 'fill-current' : ''}`} />
-                </Button>
-                {folder.pinned && (
+                <div className="absolute top-2 right-2 flex gap-1 z-10">
+                  <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0 border-2"
+                      style={folder.showcasePinned ? {
+                        backgroundColor: '#dc2626',
+                        borderColor: '#dc2626',
+                        color: 'white'
+                      } : {
+                        borderColor: '#fca5a5',
+                        color: '#dc2626'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (folder.showcasePinned) {
+                          handleShowcaseUnpinFolder(folder.id);
+                        } else {
+                          handleShowcasePinFolder(folder.id);
+                        }
+                      }}
+                      title={folder.showcasePinned ? "Remove showcase pin" : "Showcase pin"}
+                  >
+                    <Pin className={`h-4 w-4 ${folder.showcasePinned ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button
+                      size="sm"
+                      variant={folder.pinned ? "default" : "outline"}
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (folder.pinned) {
+                          handleUnpinFolder(folder.id);
+                        } else {
+                          handlePinFolder(folder.id);
+                        }
+                      }}
+                      title={folder.pinned ? "Unpin folder" : "Pin folder"}
+                  >
+                    <Pin className={`h-4 w-4 ${folder.pinned ? 'fill-current' : ''}`} />
+                  </Button>
+                </div>
+                {folder.showcasePinned && (
+                    <div
+                        className="absolute top-2 left-2 text-xs px-2 py-1 rounded-md z-10"
+                        style={{
+                          backgroundColor: '#dc2626',
+                          color: 'white'
+                        }}
+                    >
+                      Showcase
+                    </div>
+                )}
+                {folder.pinned && !folder.showcasePinned && (
                     <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md z-10">
                       Pinned
                     </div>
