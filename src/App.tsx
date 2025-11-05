@@ -13,6 +13,7 @@ import { UserProfilePage } from './components/UserProfilePage';
 import { UploadProvider } from './components/UploadContext';
 import { TagProvider } from './components/TagContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Toaster } from 'sonner';
 
 type PageType = 'home' | 'references' | 'art' | 'documents' | 'tools' | 'resources' | 'public' | 'folder-detail' | 'login' | 'profile';
 
@@ -108,6 +109,7 @@ function AppContent() {
     return (
         <TagProvider>
           <UploadProvider>
+            <Toaster position="top-right" expand={true} richColors />
             {renderCurrentPage()}
           </UploadProvider>
         </TagProvider>

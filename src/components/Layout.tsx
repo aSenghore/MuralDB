@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Home, BookOpen, Image, Moon, Sun, User, FileText, LogOut, LogIn, Settings, Wrench, ExternalLink, Cloud } from 'lucide-react';
+import { Toaster } from 'sonner';
 
 interface User {
   email: string;
@@ -42,6 +43,7 @@ export function Layout({ children, currentPage, onNavigate, user, onLogout }: La
 
   return (
       <div className="flex min-h-screen w-full">
+        <Toaster position="top-right" expand={true} richColors />
         {/* Hover trigger area */}
         <div
             className="fixed left-0 top-0 w-6 h-full z-50"
