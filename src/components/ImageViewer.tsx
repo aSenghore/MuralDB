@@ -157,12 +157,37 @@ export function ImageViewer({
     }
   };
 
+  const truncateFileName = (fileName: string, maxLength: number = 40): string => {
+    if (fileName.length <= maxLength) {
+      return fileName;
+    }
+
+    // Split filename and extension
+    const lastDotIndex = fileName.lastIndexOf('.');
+    const hasExtension = lastDotIndex > 0 && lastDotIndex < fileName.length - 1;
+
+    if (hasExtension) {
+      const name = fileName.substring(0, lastDotIndex);
+      const extension = fileName.substring(lastDotIndex);
+
+      // Calculate how much of the name we can show
+      const availableLength = maxLength - extension.length - 3; // 3 for "..."
+
+      if (availableLength > 0) {
+        return name.substring(0, availableLength) + '...' + extension;
+      }
+    }
+
+    // If no extension or name is too short, just truncate with ellipsis
+    return fileName.substring(0, maxLength - 3) + '...';
+  };
+
   if (!currentImage) return null;
 
   return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent
-            className="max-w-6xl w-full h-[90vh] p-0 bg-black/95 border-none"
+            className="max-w-[95vw] w-full h-[90vh] p-0 bg-black/95 border-none"
             onKeyDown={handleKeyDown}
         >
           <DialogTitle className="sr-only">
@@ -174,13 +199,13 @@ export function ImageViewer({
           {/* Header with controls */}
           <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center p-4 bg-gradient-to-b
              from-black/80 to-transparent">
-            <div className="flex items-center gap-2 text-white">
+            <div className="flex items-center gap-2 text-white min-w-0 flex-1 mr-4">
               {isEditingName ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     <Input
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/60 min-w-0"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             handleNameSave();
@@ -194,7 +219,7 @@ export function ImageViewer({
                         size="sm"
                         variant="ghost"
                         onClick={handleNameSave}
-                        className="text-white hover:bg-white/10"
+                        className="text-white hover:bg-white/10 flex-shrink-0"
                     >
                       <Check className="h-4 w-4" />
                     </Button>
@@ -202,32 +227,34 @@ export function ImageViewer({
                         size="sm"
                         variant="ghost"
                         onClick={handleNameCancel}
-                        className="text-white hover:bg-white/10"
+                        className="text-white hover:bg-white/10 flex-shrink-0"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
               ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{currentImage.name}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-lg truncate" title={currentImage.name}>
+                      {truncateFileName(currentImage.name)}
+                    </span>
                     {onImageRename && (
                         <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setIsEditingName(true)}
-                            className="text-white hover:bg-white/10"
+                            className="text-white hover:bg-white/10 flex-shrink-0"
                         >
                           <Edit3 className="h-4 w-4" />
                         </Button>
                     )}
                   </div>
               )}
-              <span className="text-sm text-white/60">
+              <span className="text-sm text-white/60 flex-shrink-0">
                 {currentImageIndex + 1} of {images.length}
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {showControls && (
                   <>
                     <Button
@@ -279,7 +306,7 @@ export function ImageViewer({
                   style={{
                     transform: `scale(${zoom}) rotate(${rotation}deg)`,
                     transformOrigin: 'left top'
-                    }}
+                  }}
               >
                 <ImageWithFallback
                     src={currentImage.url}
