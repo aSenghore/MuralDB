@@ -6,6 +6,7 @@ import { ArtPhotosPage } from './components/ArtPhotosPage';
 import { DocumentsPage } from './components/DocumentsPage';
 import { ToolsPage } from './components/ToolsPage';
 import { ResourcesPage } from './components/ResourcesPage';
+import {CollaborationsPage} from './components/CollaborationsPage';
 import { FolderDetail } from './components/FolderDetail';
 import { LoginPage } from './components/LoginPage';
 import { UserProfilePage } from './components/UserProfilePage';
@@ -13,7 +14,7 @@ import { UploadProvider } from './components/UploadContext';
 import { TagProvider } from './components/TagContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type PageType = 'home' | 'references' | 'art' | 'documents' | 'tools' | 'resources' | 'folder-detail' | 'login' | 'profile';
+type PageType = 'home' | 'references' | 'art' | 'documents' | 'tools' | 'resources' | 'public' | 'folder-detail' | 'login' | 'profile';
 
 function AppContent() {
   const { currentUser, logout } = useAuth();
@@ -76,6 +77,8 @@ function AppContent() {
         return <ToolsPage />;
       case 'resources':
         return <ResourcesPage />;
+      case 'public':
+        return <CollaborationsPage user={currentUser} />;
       case 'folder-detail':
         return selectedFolderId ? (
             <FolderDetail

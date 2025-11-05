@@ -546,46 +546,6 @@ export function CollaborationsPage({ user }: CollaborationsPageProps) {
           </Card>
         </div>
 
-        {/* Collaboration Tips */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Collaboration Tips</CardTitle>
-            <CardDescription>
-              Make the most out of your gallery collaborations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-6 text-sm">
-              <div className="space-y-2">
-                <h4 className="font-medium">Sharing Best Practices</h4>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• Organize your galleries before sharing</li>
-                  <li>• Use descriptive gallery names and descriptions</li>
-                  <li>• Add relevant tags to make content discoverable</li>
-                  <li>• Consider permissions carefully</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-medium">Communication</h4>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• Include messages with invitations</li>
-                  <li>• Set clear expectations for collaboration</li>
-                  <li>• Discuss editing permissions beforehand</li>
-                  <li>• Provide context for shared references</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-medium">Privacy & Security</h4>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• Only share with trusted collaborators</li>
-                  <li>• Review who has access regularly</li>
-                  <li>• Remove access when collaboration ends</li>
-                  <li>• Keep sensitive work in private galleries</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
   );
 }

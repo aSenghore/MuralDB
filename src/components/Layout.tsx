@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Home, BookOpen, Image, Moon, Sun, User, FileText, LogOut, LogIn, Settings, Wrench, ExternalLink } from 'lucide-react';
+import { Home, BookOpen, Image, Moon, Sun, User, FileText, LogOut, LogIn, Settings, Wrench, ExternalLink, Cloud } from 'lucide-react';
 
 interface User {
   email: string;
@@ -37,6 +37,7 @@ export function Layout({ children, currentPage, onNavigate, user, onLogout }: La
     { title: 'Documents', icon: FileText, page: 'documents' },
     { title: 'Tools', icon: Wrench, page: 'tools' },
     { title: 'Resources', icon: ExternalLink, page: 'resources' },
+    { title: 'Public', icon: Cloud, page: 'public'}
   ];
 
   return (
