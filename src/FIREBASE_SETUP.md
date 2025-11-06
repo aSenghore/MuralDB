@@ -89,15 +89,16 @@ npm install firebase
 ### Firestore Rules
 Go to **Firestore Database > Rules** in Firebase Console and replace the entire content with:
 
-\`\`\`javascript
+```
+javascript
 rules_version = '2';
 service cloud.firestore {
-match /databases/{database}/documents {
-// Users can only read/write their own data
-match /users/{userId} {
-allow read, write: if request.auth != null && request.auth.uid == userId;
-}
-
+  match /databases/{database}/documents {
+    // Users can only read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
     // Galleries - users can access their own galleries, and anyone can read showcase pinned galleries
     match /galleries/{galleryId} {
       allow read: if request.auth != null && (
@@ -138,10 +139,9 @@ allow read, write: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+  }
 }
-}
-\`\`\`
-
+```
 ### Storage Rules
 Go to **Storage > Rules** in Firebase Console and replace the entire content with:
 

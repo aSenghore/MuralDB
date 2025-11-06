@@ -56,12 +56,11 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
             const galleryBookmarks = bookmarks.filter(b => b.itemType === 'gallery');
             const folderBookmarks = bookmarks.filter(b => b.itemType === 'folder');
 
-            // Load gallery data
+            // Load gallery data using direct gallery ID fetch
             const galleriesData: BookmarkedGallery[] = [];
             for (const bookmark of galleryBookmarks) {
                 try {
-                    const galleries = await galleryService.getUserGalleries(bookmark.ownerUserId);
-                    const gallery = galleries.find(g => g.id === bookmark.itemId);
+                    const gallery = await galleryService.getGalleryById(bookmark.itemId);
                     if (gallery && gallery.showcasePinned) {
                         galleriesData.push({
                             ...gallery,
@@ -73,15 +72,16 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
                     }
                 } catch (error) {
                     console.error('Error loading gallery:', error);
+                    // If we can't access the gallery, remove the bookmark
+                    await bookmarkService.deleteBookmark(user.uid, bookmark.itemId);
                 }
             }
 
-            // Load folder data
+            // Load folder data using direct folder ID fetch
             const foldersData: BookmarkedFolder[] = [];
             for (const bookmark of folderBookmarks) {
                 try {
-                    const folders = await documentService.getUserFolders(bookmark.ownerUserId);
-                    const folder = folders.find(f => f.id === bookmark.itemId);
+                    const folder = await documentService.getFolderById(bookmark.itemId);
                     if (folder && folder.showcasePinned) {
                         foldersData.push({
                             ...folder,
@@ -93,6 +93,8 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
                     }
                 } catch (error) {
                     console.error('Error loading folder:', error);
+                    // If we can't access the folder, remove the bookmark
+                    await bookmarkService.deleteBookmark(user.uid, bookmark.itemId);
                 }
             }
 
@@ -221,23 +223,26 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
                                                     onClick={() => setSelectedGallery(gallery)}
                                                     galleryId={gallery.id}
                                                 />
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="absolute top-2 right-2 h-8 w-8 p-0 border-2 z-10"
-                                                    style={{
-                                                        backgroundColor: '#ca8a04',
-                                                        borderColor: '#ca8a04',
-                                                        color: 'white'
-                                                    }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleRemoveBookmark(gallery.id);
-                                                    }}
-                                                    title="Remove bookmark"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
+                                                <div className="absolute top-2 right-2 flex gap-1 z-10">
+
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-8 w-8 p-0 border-2"
+                                                        style={{
+                                                            backgroundColor: '#ca8a04',
+                                                            borderColor: '#ca8a04',
+                                                            color: 'white'
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRemoveBookmark(gallery.id);
+                                                        }}
+                                                        title="Remove bookmark"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

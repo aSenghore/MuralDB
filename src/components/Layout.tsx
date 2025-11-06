@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Home, BookOpen, Image, Moon, Sun, User, FileText, LogOut, LogIn, Settings, Wrench, ExternalLink, Cloud, Bookmark } from 'lucide-react';
 import { Toaster } from 'sonner';
+import logo from './paintbrush.png';
 
 interface User {
   email: string;
@@ -36,10 +37,10 @@ export function Layout({ children, currentPage, onNavigate, user, onLogout }: La
     { title: 'References', icon: BookOpen, page: 'references' },
     { title: 'Art', icon: Image, page: 'art' },
     { title: 'Documents', icon: FileText, page: 'documents' },
-    { title: 'Tools', icon: Wrench, page: 'tools' },
-    { title: 'Resources', icon: ExternalLink, page: 'resources' },
     { title: 'Public', icon: Cloud, page: 'public'},
-    { title: 'Bookmarks', icon: Bookmark, page: 'bookmarks'}
+    { title: 'Bookmarks', icon: Bookmark, page: 'bookmarks'},
+    { title: 'Tools', icon: Wrench, page: 'tools' },
+    { title: 'Resources', icon: ExternalLink, page: 'resources' }
   ];
 
   return (
@@ -62,8 +63,10 @@ export function Layout({ children, currentPage, onNavigate, user, onLogout }: La
           {/* Header */}
           <div className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-foreground font-medium text-sm">M</span>
+              <div className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0">
+                <span className="text-primary-foreground font-medium text-sm">
+                  <img src={logo} alt={"Logo"} width={'80%'} />
+                </span>
               </div>
               <h2 className={`font-medium text-sidebar-foreground sidebar-text whitespace-nowrap ${
                   isHovered ? 'opacity-100' : 'opacity-0'

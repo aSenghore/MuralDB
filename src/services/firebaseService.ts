@@ -16,7 +16,8 @@ import {
   ref,
   uploadBytes,
   getDownloadURL,
-  deleteObject
+  deleteObject,
+  getBlob
 } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 import { FirebaseGallery, FirebaseImage, FirebaseDocument, FirebaseFolder, FirebaseTag, FirebaseBookmark } from '../types/firebase';
@@ -72,6 +73,25 @@ export const galleryService = {
     } catch (error) {
       console.error('Error getting galleries:', error);
       return [];
+    }
+  },
+
+  // Get a single gallery by ID (works for showcase-pinned galleries even if not the owner)
+  async getGalleryById(galleryId: string): Promise<FirebaseGallery | null> {
+    try {
+      const galleryRef = doc(db, 'galleries', galleryId);
+      const galleryDoc = await getDoc(galleryRef);
+
+      if (galleryDoc.exists()) {
+        return {
+          id: galleryDoc.id,
+          ...galleryDoc.data()
+        } as FirebaseGallery;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting gallery:', error);
+      return null;
     }
   },
 
@@ -382,6 +402,25 @@ export const documentService = {
     } catch (error) {
       console.error('Error getting folders:', error);
       return [];
+    }
+  },
+
+  // Get a single folder by ID (works for showcase-pinned folders even if not the owner)
+  async getFolderById(folderId: string): Promise<FirebaseFolder | null> {
+    try {
+      const folderRef = doc(db, 'folders', folderId);
+      const folderDoc = await getDoc(folderRef);
+
+      if (folderDoc.exists()) {
+        return {
+          id: folderDoc.id,
+          ...folderDoc.data()
+        } as FirebaseFolder;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting folder:', error);
+      return null;
     }
   },
 
