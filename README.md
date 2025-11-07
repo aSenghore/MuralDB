@@ -1,5 +1,8 @@
 <img width="1131" height="214" alt="image" src="https://github.com/user-attachments/assets/8dd1e624-8ce5-4402-ab76-f1561021fa2b" />
 
+CURRENT ISSUES
+Documents are not loading in folders.
+Recent uploads are not loading in folders.
 
 # Fall 2025
 ## :page_facing_up: Description
