@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { User, Edit3, Trash2, Calendar, ExternalLink, Save, X, Shield, Upload, Loader2 } from 'lucide-react';
+import { User, Edit3, Trash2, Calendar, ExternalLink, Save, X, Shield, Upload, Loader2, Mail, KeyRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { galleryService } from '../services/firebaseService';
 import { FirebaseGallery } from '../types/firebase';
@@ -28,7 +28,7 @@ interface UserProfilePageProps {
 }
 
 export function UserProfilePage({ user }: UserProfilePageProps) {
-  const { updateUserProfile, logout } = useAuth();
+  const { updateUserProfile, logout, resetPassword } = useAuth();
   const [galleries, setGalleries] = useState<FirebaseGallery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +40,7 @@ export function UserProfilePage({ user }: UserProfilePageProps) {
   });
   const [profilePicture, setProfilePicture] = useState(user.profilePicture || '');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load user's galleries from Firebase
@@ -47,7 +48,11 @@ export function UserProfilePage({ user }: UserProfilePageProps) {
     const loadGalleries = async () => {
       try {
         const userGalleries = await galleryService.getUserGalleries(user.uid);
-        setGalleries(userGalleries);
+        // Sort galleries by creation date (newest first)
+        const sortedGalleries = userGalleries.sort((a, b) => {
+          return b.createdAt.toMillis() - a.createdAt.toMillis();
+        });
+        setGalleries(sortedGalleries);
       } catch (error) {
         console.error('Error loading galleries:', error);
         toast.error('Failed to load galleries');
@@ -168,6 +173,18 @@ export function UserProfilePage({ user }: UserProfilePageProps) {
     } catch (error: any) {
       console.error('Error deleting gallery:', error);
       toast.error('Failed to delete gallery');
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setIsResettingPassword(true);
+    try {
+      await resetPassword(user.email);
+      toast.success('Password reset email sent! Check your inbox.');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send password reset email');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -443,12 +460,42 @@ export function UserProfilePage({ user }: UserProfilePageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Password</Label>
-                  <div className="p-4 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      Password management is handled by Firebase Authentication. To change your password, you would need to implement password reset functionality.
+                <div className="space-y-4">
+                  <div>
+                    <Label className="flex items-center gap-2">
+                      <KeyRound className="h-4 w-4" />
+                      Password
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Reset your password by receiving a secure link via email
                     </p>
+                  </div>
+                  <div className="p-4 bg-muted rounded-md space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">Change Password</p>
+                        <p className="text-sm text-muted-foreground">
+                          We'll send a password reset link to {user.email}
+                        </p>
+                      </div>
+                      <Button
+                          onClick={handlePasswordReset}
+                          variant="outline"
+                          disabled={isResettingPassword}
+                      >
+                        {isResettingPassword ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Sending...
+                            </>
+                        ) : (
+                            <>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Send Reset Link
+                            </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
 

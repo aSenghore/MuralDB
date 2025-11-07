@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   User as FirebaseAuthUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import {
   doc,
@@ -38,6 +38,7 @@ interface AuthContextType {
   signin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (userData: Partial<User>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -157,6 +158,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Reset password
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email address.');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Invalid email address.');
+      } else {
+        throw new Error('Failed to send password reset email. Please try again.');
+      }
+    }
+  };
+
   // Get user data from Firestore
   const getUserData = async (uid: string): Promise<User | null> => {
     try {
@@ -201,7 +218,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signup,
     signin,
     logout,
-    updateUserProfile
+    updateUserProfile,
+    resetPassword
   };
 
   return (

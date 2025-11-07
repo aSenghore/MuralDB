@@ -4,7 +4,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { ArrowLeft, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -13,7 +14,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onNavigate }: LoginPageProps) {
-  const { signin, signup } = useAuth();
+  const { signin, signup, resetPassword } = useAuth();
   const [loginData, setLoginData] = useState({
     email: '',
     password: ''
@@ -33,6 +34,9 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const [loginError, setLoginError] = useState('');
   const [signupError, setSignupError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +120,35 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       toast.error(error.message || 'Failed to create account');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsResetting(true);
+
+    // Basic validation
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
+      setIsResetting(false);
+      return;
+    }
+
+    if (!resetEmail.includes('@')) {
+      toast.error('Please enter a valid email address');
+      setIsResetting(false);
+      return;
+    }
+
+    try {
+      await resetPassword(resetEmail);
+      toast.success('Password reset email sent! Check your inbox.');
+      setIsResetDialogOpen(false);
+      setResetEmail('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send password reset email');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -205,6 +238,61 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                           'Sign In'
                       )}
                     </Button>
+                    <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="link"
+                            className="text-sm text-primary"
+                        >
+                          Forgot your password?
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <form onSubmit={handlePasswordReset}>
+                          <DialogHeader>
+                            <DialogTitle>Reset Password</DialogTitle>
+                            <DialogDescription>
+                              Enter your email address and we'll send you a link to reset your password.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4">
+                            <Label htmlFor="reset-email">Email Address</Label>
+                            <Input
+                                id="reset-email"
+                                type="email"
+                                placeholder="Enter your email"
+                                value={resetEmail}
+                                onChange={(e) => setResetEmail(e.target.value)}
+                                className="mt-2"
+                            />
+                          </div>
+                          <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsResetDialogOpen(false)}
+                                disabled={isResetting}
+                            >
+                              Cancel
+                            </Button>
+                            <Button type="submit" disabled={isResetting}>
+                              {isResetting ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Sending...
+                                  </>
+                              ) : (
+                                  <>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Send Reset Link
+                                  </>
+                              )}
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
                     <div className="text-sm text-muted-foreground text-center">
                       Enter your credentials to access your account
                     </div>

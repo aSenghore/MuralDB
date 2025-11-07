@@ -121,6 +121,9 @@ dist
 
 #Firebase config
 src/config/firebase.ts
+.firebaserc
+
+
 # TernJS port file
 .tern-port
 
