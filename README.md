@@ -69,7 +69,29 @@ There are numerous resources for storing references and finding them, as well as
     export default app;
 
 6. Replace the firebase configuration with your own firebase configuration (assuming the site is being installed for testing and development)
-7. Follow the instructions in FIREBASE_SETUP.md for the firestore and storage rules.
+7. Create `.firebaserc` in the root folder, and replace with your project ID.
+`
+{
+  "projects": {
+    "default": "your project id"
+  }
+}
+`
+8.  Create `.env` in the root folder, and add your config.
+9.  Follow the instructions in FIREBASE_SETUP.md, FIREBASE_INTEGRATION_COMPLETE.md, and DEPLOYMENT_QUICKSTART.md.
+10.  If hosting app:
+`
+npm install -g firebase-tools
+firebase login
+firebase deploy --only firestore:rules,storage:rules,firestore:indexes
+npm run build
+firebase init hosting
+`
+Select yes when asked to proceed. Make `build` your public directory (You can just type build)
+The app is on a single page, so select yes to configure as a single app. Select your preference for automatic builds, and do not overwrite the build file.
+`
+firebase deploy --only hosting  --project "your project id (remove quotations)"
+`
 
 ## :runner: How To Run
 1. From the src directory, run:
@@ -94,7 +116,7 @@ Figma was used to work on the basic UI, alongside some aspects for the site.
 
 [![Sprint 1 Demo Video](https://img.youtube.com/vi/u89HqNRJvvA/0.jpg)](https://www.youtube.com/watch?v=u89HqNRJvvA)
 
-**Sprint 2 Demo Video** (Thumbnail in progress)
+**Sprint 2 Demo Video**
 
 [![Sprint 2 Demo Video](hhttps://img.youtube.com/vi/9PK2p9vNODg/0.jpg)](https://www.youtube.com/watch?v=9PK2p9vNODg)
 
