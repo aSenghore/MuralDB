@@ -348,14 +348,27 @@ export const galleryService = {
         updatedAt: Timestamp.now()
       });
 
-      // Remove all bookmarks for this gallery
-      const bookmarksQuery = query(
-          collection(db, 'bookmarks'),
-          where('itemId', '==', galleryId)
-      );
-      const bookmarksSnapshot = await getDocs(bookmarksQuery);
-      const deletePromises = bookmarksSnapshot.docs.map(doc => deleteDoc(doc.ref));
-      await Promise.all(deletePromises);
+      // Remove all bookmarks for this gallery (wrapped in try-catch to not fail the unpin)
+      try {
+        const bookmarksQuery = query(
+            collection(db, 'bookmarks'),
+            where('itemId', '==', galleryId)
+        );
+        const bookmarksSnapshot = await getDocs(bookmarksQuery);
+
+        // Delete bookmarks one by one, catching individual errors
+        for (const bookmarkDoc of bookmarksSnapshot.docs) {
+          try {
+            await deleteDoc(bookmarkDoc.ref);
+          } catch (deleteError) {
+            // Log but don't throw - some bookmarks might not be deletable due to permissions
+            console.warn('Could not delete bookmark:', bookmarkDoc.id, deleteError);
+          }
+        }
+      } catch (bookmarkError) {
+        // Log bookmark deletion errors but don't throw - the showcase unpin itself succeeded
+        console.warn('Error deleting bookmarks for gallery:', galleryId, bookmarkError);
+      }
     } catch (error) {
       console.error('Error showcase unpinning gallery:', error);
       throw error;
@@ -723,14 +736,27 @@ export const documentService = {
         updatedAt: Timestamp.now()
       });
 
-      // Remove all bookmarks for this folder
-      const bookmarksQuery = query(
-          collection(db, 'bookmarks'),
-          where('itemId', '==', folderId)
-      );
-      const bookmarksSnapshot = await getDocs(bookmarksQuery);
-      const deletePromises = bookmarksSnapshot.docs.map(doc => deleteDoc(doc.ref));
-      await Promise.all(deletePromises);
+      // Remove all bookmarks for this folder (wrapped in try-catch to not fail the unpin)
+      try {
+        const bookmarksQuery = query(
+            collection(db, 'bookmarks'),
+            where('itemId', '==', folderId)
+        );
+        const bookmarksSnapshot = await getDocs(bookmarksQuery);
+
+        // Delete bookmarks one by one, catching individual errors
+        for (const bookmarkDoc of bookmarksSnapshot.docs) {
+          try {
+            await deleteDoc(bookmarkDoc.ref);
+          } catch (deleteError) {
+            // Log but don't throw - some bookmarks might not be deletable due to permissions
+            console.warn('Could not delete bookmark:', bookmarkDoc.id, deleteError);
+          }
+        }
+      } catch (bookmarkError) {
+        // Log bookmark deletion errors but don't throw - the showcase unpin itself succeeded
+        console.warn('Error deleting bookmarks for folder:', folderId, bookmarkError);
+      }
     } catch (error) {
       console.error('Error showcase unpinning folder:', error);
       throw error;
@@ -1018,8 +1044,16 @@ export const bookmarkService = {
       );
 
       const querySnapshot = await getDocs(q);
-      const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-      await Promise.all(deletePromises);
+
+      // Delete bookmarks one by one, catching individual errors
+      for (const bookmarkDoc of querySnapshot.docs) {
+        try {
+          await deleteDoc(bookmarkDoc.ref);
+        } catch (deleteError) {
+          // Log but don't throw - some bookmarks might not be deletable due to permissions
+          console.warn('Could not delete bookmark:', bookmarkDoc.id, deleteError);
+        }
+      }
     } catch (error) {
       console.error('Error deleting bookmarks for item:', error);
       throw error;

@@ -1,63 +1,63 @@
 rules_version = '2';
 
 service firebase.storage {
-  match /b/{bucket}/o {
+    match /b/{bucket}/o {
 
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
+                        // Helper function to check if user is authenticated
+function isAuthenticated() {
+return request.auth != null;
+}
 
-    // Helper function to check file size (max 10MB)
-    function isValidSize() {
-      return request.resource.size < 10 * 1024 * 1024;
-    }
+// Helper function to check file size (max 10MB)
+function isValidSize() {
+return request.resource.size < 10 * 1024 * 1024;
+}
 
-    // Helper function to check if file is an image
-    function isImage() {
-      return request.resource.contentType.matches('image/.*');
-    }
+// Helper function to check if file is an image
+function isImage() {
+return request.resource.contentType.matches('image/.*');
+}
 
-    // Helper function to check if file is a document
-    function isDocument() {
-      return request.resource.contentType.matches('application/pdf') ||
-             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
-             request.resource.contentType.matches('application/msword') ||
-             request.resource.contentType.matches('text/plain');
-    }
+// Helper function to check if file is a document
+function isDocument() {
+return request.resource.contentType.matches('application/pdf') ||
+request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+request.resource.contentType.matches('application/msword') ||
+request.resource.contentType.matches('text/plain');
+}
 
-    // Profile pictures - users can upload/delete their own
-    match /profile-pictures/{userId} {
-      allow read: if true;
-      allow write: if isAuthenticated() &&
-                      request.auth.uid == userId &&
-                      isImage() &&
-                      request.resource.size < 5 * 1024 * 1024; // 5MB limit for profile pics
-    }
+// Profile pictures - users can upload/delete their own
+match /profile-pictures/{userId} {
+allow read: if true;
+allow write: if isAuthenticated() &&
+    request.auth.uid == userId &&
+    isImage() &&
+    request.resource.size < 5 * 1024 * 1024; // 5MB limit for profile pics
+}
 
-    // Gallery images - authenticated users can upload
-    match /galleries/{userId}/{galleryId}/{imageId} {
-      allow read: if true;
-      allow write: if isAuthenticated() &&
-                      request.auth.uid == userId &&
-                      isImage() &&
-                      isValidSize();
-      allow delete: if isAuthenticated() && request.auth.uid == userId;
-    }
+// Gallery images - authenticated users can upload
+match /galleries/{userId}/{galleryId}/{imageId} {
+allow read: if true;
+allow write: if isAuthenticated() &&
+    request.auth.uid == userId &&
+    isImage() &&
+    isValidSize();
+allow delete: if isAuthenticated() && request.auth.uid == userId;
+}
 
-    // Document files - authenticated users can upload
-    match /documents/{userId}/{folderId}/{documentId} {
-      allow read: if true;
-      allow write: if isAuthenticated() &&
-                      request.auth.uid == userId &&
-                      isDocument() &&
-                      request.resource.size < 20 * 1024 * 1024; // 20MB limit for documents
-      allow delete: if isAuthenticated() && request.auth.uid == userId;
-    }
+// Document files - authenticated users can upload
+match /documents/{userId}/{folderId}/{documentId} {
+allow read: if true;
+allow write: if isAuthenticated() &&
+    request.auth.uid == userId &&
+    isDocument() &&
+    request.resource.size < 20 * 1024 * 1024; // 20MB limit for documents
+allow delete: if isAuthenticated() && request.auth.uid == userId;
+}
 
-    // Catch-all - deny by default
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
-  }
+// Catch-all - deny by default
+match /{allPaths=**} {
+allow read, write: if false;
+}
+}
 }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Cloud, Search, BookOpen, Image as ImageIcon, Folder, Bookmark, X, Loader2} from 'lucide-react';
+import { Cloud, Search, BookOpen, Image as ImageIcon, Folder, Bookmark, X, Loader2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { showcaseService, bookmarkService, galleryService } from '../services/firebaseService';
 import { FirebaseGallery, FirebaseFolder } from '../types/firebase';
@@ -94,8 +94,6 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
             toast.error(error.message || 'Failed to update bookmark');
         }
     };
-
-
 
     const filterItems = <T extends { name: string; description?: string }>(items: T[]): T[] => {
         if (!searchTerm.trim()) return items;
@@ -221,31 +219,33 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                                                     </div>
                                                 </div>
                                                 {user && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="absolute top-2 right-2 h-8 w-8 p-0 border-2 z-10"
-                                                        style={bookmarkedIds.has(gallery.id) ? {
-                                                            backgroundColor: '#ca8a04',
-                                                            borderColor: '#ca8a04',
-                                                            color: 'white'
-                                                        } : {
-                                                            borderColor: '#fde047',
-                                                            color: '#ca8a04',
-                                                            backgroundColor: 'white'
-                                                        }}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleToggleBookmark(gallery.id, 'gallery', gallery.userId);
-                                                        }}
-                                                        title={bookmarkedIds.has(gallery.id) ? 'Remove bookmark' : 'Bookmark'}
-                                                    >
-                                                        {bookmarkedIds.has(gallery.id) ? (
-                                                            <X className="h-4 w-4" />
-                                                        ) : (
-                                                            <Bookmark className="h-4 w-4" />
-                                                        )}
-                                                    </Button>
+                                                    <div className="absolute top-2 right-2 flex gap-1 z-10">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-8 w-8 p-0 border-2"
+                                                            style={bookmarkedIds.has(gallery.id) ? {
+                                                                backgroundColor: '#ca8a04',
+                                                                borderColor: '#ca8a04',
+                                                                color: 'white'
+                                                            } : {
+                                                                borderColor: '#fde047',
+                                                                color: '#ca8a04',
+                                                                backgroundColor: 'white'
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleBookmark(gallery.id, 'gallery', gallery.userId);
+                                                            }}
+                                                            title={bookmarkedIds.has(gallery.id) ? 'Remove bookmark' : 'Bookmark'}
+                                                        >
+                                                            {bookmarkedIds.has(gallery.id) ? (
+                                                                <X className="h-4 w-4" />
+                                                            ) : (
+                                                                <Bookmark className="h-4 w-4" />
+                                                            )}
+                                                        </Button>
+                                                    </div>
                                                 )}
                                             </div>
                                         ))}
