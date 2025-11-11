@@ -1060,3 +1060,31 @@ export const bookmarkService = {
     }
   }
 };
+
+// User Service
+export const userService = {
+  // Get user by ID
+  async getUserById(userId: string): Promise<{ uid: string; screenName: string; firstName: string; lastName: string; email: string; profilePicture?: string } | null> {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        return null;
+      }
+
+      const data = userDoc.data();
+      return {
+        uid: userDoc.id,
+        screenName: data.screenName,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        profilePicture: data.profilePicture
+      };
+    } catch (error) {
+      console.error('Error getting user:', error);
+      return null;
+    }
+  }
+};

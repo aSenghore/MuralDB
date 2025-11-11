@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Bookmark, BookOpen, Image as ImageIcon, Folder, X, Loader2 } from 'lucide-react';
+import { Bookmark, BookOpen, Image as ImageIcon, Folder, X, Loader2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { bookmarkService, galleryService, documentService } from '../services/firebaseService';
+import { bookmarkService, galleryService, documentService, userService } from '../services/firebaseService';
 import { FirebaseBookmark, FirebaseGallery, FirebaseFolder } from '../types/firebase';
 import { GalleryThumbnail } from './GalleryThumbnail';
 import { GalleryDetail } from './GalleryDetail';
@@ -38,6 +38,7 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
     const [selectedGallery, setSelectedGallery] = useState<FirebaseGallery | null>(null);
     const [selectedFolder, setSelectedFolder] = useState<FirebaseFolder | null>(null);
     const [loading, setLoading] = useState(true);
+    const [userMap, setUserMap] = useState<Map<string, { screenName: string }>>(new Map());
 
     useEffect(() => {
         if (user) {
@@ -100,6 +101,28 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
 
             setBookmarkedGalleries(galleriesData);
             setBookmarkedFolders(foldersData);
+
+            // Load user information for all unique userIds
+            const userIds = new Set<string>();
+            galleriesData.forEach(g => userIds.add(g.userId));
+            foldersData.forEach(f => userIds.add(f.userId));
+
+            const userPromises = Array.from(userIds).map(async (userId) => {
+                const userData = await userService.getUserById(userId);
+                if (userData) {
+                    return { userId, screenName: userData.screenName };
+                }
+                return null;
+            });
+
+            const userResults = await Promise.all(userPromises);
+            const newUserMap = new Map<string, { screenName: string }>();
+            userResults.forEach(result => {
+                if (result) {
+                    newUserMap.set(result.userId, { screenName: result.screenName });
+                }
+            });
+            setUserMap(newUserMap);
         } catch (error) {
             console.error('Error loading bookmarks:', error);
             toast.error('Failed to load bookmarks');
@@ -222,9 +245,9 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
                                                     imageCount={gallery.images.length}
                                                     onClick={() => setSelectedGallery(gallery)}
                                                     galleryId={gallery.id}
+                                                    uploaderName={userMap.get(gallery.userId)?.screenName}
                                                 />
                                                 <div className="absolute top-2 right-2 flex gap-1 z-10">
-
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
@@ -270,6 +293,7 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
                                                     imageCount={gallery.images.length}
                                                     onClick={() => setSelectedGallery(gallery)}
                                                     galleryId={gallery.id}
+                                                    uploaderName={userMap.get(gallery.userId)?.screenName}
                                                 />
                                                 <Button
                                                     size="sm"
@@ -316,7 +340,14 @@ export function BookmarksPage({ user }: BookmarksPageProps) {
                                                 <CardHeader>
                                                     <CardTitle className="flex items-center gap-2">
                                                         <Folder className="h-5 w-5 text-primary" />
-                                                        {folder.name}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div>{folder.name}</div>
+                                                            {userMap.get(folder.userId)?.screenName && (
+                                                                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                                                    {userMap.get(folder.userId)?.screenName}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </CardTitle>
                                                     {folder.description && (
                                                         <CardDescription>{folder.description}</CardDescription>

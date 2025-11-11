@@ -288,7 +288,7 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
           </div>
           <div className="flex items-center mobile-button-group sm:gap-2">
             <TagManager>
-              <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3 flex-1 sm:flex-none">
                 <Tag className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 mobile-icon" />
                 <span className="hidden sm:inline">Manage </span>Tags
               </Button>
@@ -297,14 +297,14 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsManagementMode(true)}
-                className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
+                className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 flex-1 sm:flex-none"
             >
               <Settings className="h-3 w-3 sm:h-4 sm:w-4 mobile-icon" />
               Manage
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                <Button size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 flex-1 sm:flex-none">
                   <Plus className="h-3 w-3 sm:h-4 sm:w-4 mobile-icon" />
                   <span className="hidden sm:inline">New </span>Folder
                 </Button>
@@ -363,7 +363,7 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
             itemType="document"
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 document-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 document-grid">
           {sortedFolders.map((folder) => (
               <div key={folder.id} className="relative">
                 <Card
@@ -389,11 +389,11 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
                     />
                   </CardHeader>
                 </Card>
-                <div className="absolute top-2 right-2 flex gap-1 z-10">
+                <div className="absolute top-2 right-2 flex gap-1 sm:gap-1.5 z-10">
                   <Button
                       size="sm"
                       variant="outline"
-                      className="h-8 w-8 p-0 border-2"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0 border-2 pin-button-mobile"
                       style={folder.showcasePinned ? {
                         backgroundColor: '#dc2626',
                         borderColor: '#dc2626',
@@ -412,12 +412,12 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
                       }}
                       title={folder.showcasePinned ? "Remove showcase pin" : "Showcase pin"}
                   >
-                    <Pin className={`h-4 w-4 ${folder.showcasePinned ? 'fill-current' : ''}`} />
+                    <Pin className="h-3 w-3 sm:h-4 sm:w-4" style={{ fill: folder.showcasePinned ? 'currentColor' : 'none' }} />
                   </Button>
                   <Button
                       size="sm"
                       variant={folder.pinned ? "default" : "outline"}
-                      className="h-8 w-8 p-0"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0 pin-button-mobile"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (folder.pinned) {
@@ -428,12 +428,12 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
                       }}
                       title={folder.pinned ? "Unpin folder" : "Pin folder"}
                   >
-                    <Pin className={`h-4 w-4 ${folder.pinned ? 'fill-current' : ''}`} />
+                    <Pin className="h-3 w-3 sm:h-4 sm:w-4" style={{ fill: folder.pinned ? 'currentColor' : 'none' }} />
                   </Button>
                 </div>
                 {folder.showcasePinned && (
                     <div
-                        className="absolute top-2 left-2 text-xs px-2 py-1 rounded-md z-10"
+                        className="absolute top-2 left-2 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md z-10 mobile-badge"
                         style={{
                           backgroundColor: '#dc2626',
                           color: 'white'
@@ -443,7 +443,7 @@ export function DocumentsPage({ onNavigate, user }: DocumentsPageProps) {
                     </div>
                 )}
                 {folder.pinned && !folder.showcasePinned && (
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md z-10">
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md z-10 mobile-badge">
                       Pinned
                     </div>
                 )}

@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Cloud, Search, BookOpen, Image as ImageIcon, Folder, Bookmark, X, Loader2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { showcaseService, bookmarkService, galleryService } from '../services/firebaseService';
+import { showcaseService, bookmarkService, galleryService, userService } from '../services/firebaseService';
 import { FirebaseGallery, FirebaseFolder } from '../types/firebase';
 import { GalleryThumbnail } from './GalleryThumbnail';
 import { GalleryDetail } from './GalleryDetail';
@@ -34,6 +34,7 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
     const [selectedGallery, setSelectedGallery] = useState<FirebaseGallery | null>(null);
     const [selectedFolder, setSelectedFolder] = useState<FirebaseFolder | null>(null);
     const [loading, setLoading] = useState(true);
+    const [userMap, setUserMap] = useState<Map<string, { screenName: string }>>(new Map());
 
     useEffect(() => {
         loadShowcaseItems();
@@ -54,6 +55,29 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
             setReferenceGalleries(references);
             setArtGalleries(art);
             setFolders(allFolders);
+
+            // Load user information for all unique userIds
+            const userIds = new Set<string>();
+            references.forEach(g => userIds.add(g.userId));
+            art.forEach(g => userIds.add(g.userId));
+            allFolders.forEach(f => userIds.add(f.userId));
+
+            const userPromises = Array.from(userIds).map(async (userId) => {
+                const userData = await userService.getUserById(userId);
+                if (userData) {
+                    return { userId, screenName: userData.screenName };
+                }
+                return null;
+            });
+
+            const userResults = await Promise.all(userPromises);
+            const newUserMap = new Map<string, { screenName: string }>();
+            userResults.forEach(result => {
+                if (result) {
+                    newUserMap.set(result.userId, { screenName: result.screenName });
+                }
+            });
+            setUserMap(newUserMap);
         } catch (error) {
             console.error('Error loading showcase items:', error);
             toast.error('Failed to load showcase galleries');
@@ -147,17 +171,17 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
     }
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto">
+        <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto p-4 sm:p-0">
             {(
                 <>
                     {/* Page Header */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="space-y-1">
-                            <h1 className="text-3xl font-medium text-foreground flex items-center gap-2">
-                                <Cloud className="h-8 w-8 text-primary" />
+                            <h1 className="text-2xl sm:text-3xl font-medium text-foreground flex items-center gap-2 mobile-page-title">
+                                <Cloud className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                                 Public Showcase
                             </h1>
-                            <p className="text-muted-foreground">
+                            <p className="text-sm sm:text-base text-muted-foreground mobile-page-description">
                                 Discover showcase galleries and folders from the community
                             </p>
                         </div>
@@ -170,7 +194,7 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                             placeholder="Search galleries and folders..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
+                            className="pl-10 mobile-search-input"
                         />
                     </div>
 
@@ -179,25 +203,28 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                             <p className="text-muted-foreground">Loading showcase items...</p>
                         </div>
                     ) : (
-                        <Tabs defaultValue="references" className="w-full">
-                            <TabsList>
-                                <TabsTrigger value="references" className="flex items-center gap-2">
-                                    <BookOpen className="h-4 w-4" />
-                                    Reference Boards ({filteredReferenceGalleries.length})
+                        <Tabs defaultValue="references" className="w-full mobile-tabs">
+                            <TabsList className="w-full grid grid-cols-3">
+                                <TabsTrigger value="references" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+                                    <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Reference Boards</span>
+                                    <span className="sm:hidden">Ref</span> ({filteredReferenceGalleries.length})
                                 </TabsTrigger>
-                                <TabsTrigger value="art" className="flex items-center gap-2">
-                                    <ImageIcon className="h-4 w-4" />
-                                    Art Boards ({filteredArtGalleries.length})
+                                <TabsTrigger value="art" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+                                    <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Art Boards</span>
+                                    <span className="sm:hidden">Art</span> ({filteredArtGalleries.length})
                                 </TabsTrigger>
-                                <TabsTrigger value="documents" className="flex items-center gap-2">
-                                    <Folder className="h-4 w-4" />
-                                    Document Boards ({filteredFolders.length})
+                                <TabsTrigger value="documents" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+                                    <Folder className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Document Boards</span>
+                                    <span className="sm:hidden">Docs</span> ({filteredFolders.length})
                                 </TabsTrigger>
                             </TabsList>
 
-                            <TabsContent value="references" className="mt-6">
+                            <TabsContent value="references" className="mt-4 sm:mt-6">
                                 {filteredReferenceGalleries.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                                         {filteredReferenceGalleries.map((gallery) => (
                                             <div key={gallery.id} className="relative">
                                                 <GalleryThumbnail
@@ -206,10 +233,11 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                                                     imageCount={gallery.images.length}
                                                     onClick={() => setSelectedGallery(gallery)}
                                                     galleryId={gallery.id}
+                                                    uploaderName={userMap.get(gallery.userId)?.screenName}
                                                 />
                                                 <div className="absolute top-2 left-2 z-10">
                                                     <div
-                                                        className="text-xs px-2 py-1 rounded-md"
+                                                        className="text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md mobile-badge"
                                                         style={{
                                                             backgroundColor: '#dc2626',
                                                             color: 'white'
@@ -219,7 +247,7 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                                                     </div>
                                                 </div>
                                                 {user && (
-                                                    <div className="absolute top-2 right-2 flex gap-1 z-10">
+                                                    <div className="absolute top-2 right-2 flex gap-1 sm:gap-1.5 z-10">
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
@@ -273,6 +301,7 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                                                     imageCount={gallery.images.length}
                                                     onClick={() => setSelectedGallery(gallery)}
                                                     galleryId={gallery.id}
+                                                    uploaderName={userMap.get(gallery.userId)?.screenName}
                                                 />
                                                 <div className="absolute top-2 left-2 z-10">
                                                     <div
@@ -339,7 +368,14 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                                                 <CardHeader>
                                                     <CardTitle className="flex items-center gap-2">
                                                         <Folder className="h-5 w-5 text-primary" />
-                                                        {folder.name}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div>{folder.name}</div>
+                                                            {userMap.get(folder.userId)?.screenName && (
+                                                                <div className="text-xs mt-1" style={{ color: '#2563eb' }}>
+                                                                    {userMap.get(folder.userId)?.screenName}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </CardTitle>
                                                     {folder.description && (
                                                         <CardDescription>{folder.description}</CardDescription>

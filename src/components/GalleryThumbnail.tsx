@@ -10,9 +10,10 @@ interface GalleryThumbnailProps {
   imageCount: number;
   onClick: () => void;
   galleryId?: string;
+  uploaderName?: string;
 }
 
-export function GalleryThumbnail({ title, images, imageCount, onClick, galleryId }: GalleryThumbnailProps) {
+export function GalleryThumbnail({ title, images, imageCount, onClick, galleryId, uploaderName }: GalleryThumbnailProps) {
   // Show first 4 images in a grid
   const thumbnailImages = images.slice(0, 4);
 
@@ -50,8 +51,15 @@ export function GalleryThumbnail({ title, images, imageCount, onClick, galleryId
 
           <div className="p-3 sm:p-4 gallery-info">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium text-card-foreground truncate text-sm sm:text-base">{title}</h3>
-              <Badge variant="secondary" className="ml-2 text-xs sm:text-sm px-1.5 sm:px-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-card-foreground truncate text-sm sm:text-base">{title}</h3>
+                {uploaderName && (
+                    <p className="text-xs truncate mt-0.5" style={{ color: '#2563eb' }}>
+                      {uploaderName}
+                    </p>
+                )}
+              </div>
+              <Badge variant="secondary" className="ml-2 text-xs sm:text-sm px-1.5 sm:px-2 flex-shrink-0">
                 {imageCount}
               </Badge>
             </div>
