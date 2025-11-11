@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Home, BookOpen, Image, Moon, Sun, User, FileText, LogOut, LogIn, Settings, Wrench, ExternalLink, Cloud, Bookmark } from 'lucide-react';
 import { Toaster } from 'sonner';
-import logo from './paintbrush.png';
+import logo from './muraldb.png';
 
 interface User {
   email: string;
