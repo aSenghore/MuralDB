@@ -3,12 +3,12 @@
 # Fall 2025
 ## :page_facing_up: Description
 **_This project or part of this project was developed as part of the SD Capstone course at GGC under Dr. B._**
-https://muraldb-935aa.web.app/ _Working site, using my Firebase config. Live version, the version on github is for testing and personal use._
 
 Many ways exist of storing references for art and photography, as well as storing documents. In many cases, it can be difficult to organize and put your things together for art projects or worldbuilding, and MuralDB is supposed to help with that issue. Using visually appealing boards, site organization, image storage and user data, ths site allows users to store all of their art related things in an organized place, while also being able to keep track of their priorities and recent work. Users can even see the boards of others, given their permission. There are also helpful tools for the creative process, alongside resource references to help you get started.
 
 ## :link: Repository URL
-- [Link](https://github.com/aSenghore/MuralDB)
+- [Repository Home](https://github.com/aSenghore/MuralDB)
+- [_Working site, using my Firebase config. Live version, the version on github is for testing and personal use._](https://muraldb-935aa.web.app/)
 
 ## :computer: Technologies
 - JavaScript
