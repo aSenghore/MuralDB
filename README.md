@@ -56,6 +56,7 @@ Many ways exist of storing references for art and photography, as well as storin
     - Public page, allows for the viewing of other users galleries.
     - You can see and search through galleries that users have given showcase pins to.
     - Galleries can be bookmarked, allowing for quick access to other boards.
+- I do still need to make the dark mode toggle permanent, as opposed to temporary.
 
 ## :floppy_disk: Installation Steps
 1. Download and extract
