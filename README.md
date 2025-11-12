@@ -1,12 +1,11 @@
-<img width="1131" height="214" alt="image" src="https://github.com/user-attachments/assets/8dd1e624-8ce5-4402-ab76-f1561021fa2b" />
-
-CURRENT ISSUES
-Documents are not loading in folders.
-Recent uploads are not loading in folders.
+<img width="1000" height="1000" alt="muraldb" src="https://github.com/user-attachments/assets/77211e47-5cdc-49a0-a4cd-80337c2cc05f" />
 
 # Fall 2025
 ## :page_facing_up: Description
-There are numerous resources for storing references and finding them, as well as various tools to keep track of work regarding art and writing, especially worldbuilding. MuralDB will allow you to store your references and images in individual, expandable and editable boards, while also allowing you to upload images and documents. Users should also be able to see the most recent uploads, allowing them to keep track of what they have been working on. The website should also have helpful resources to get people started. Some examples would be references to good drawing pads and screen tablets for digital artists, places to get consistent materials for physical artists, or places to find cameras for photographers. There is also a character prompt generator, with more tools in the works.
+**_This project or part of this project was developed as part of the SD Capstone course at GGC under Dr. B._**
+https://muraldb-935aa.web.app/ _Working site, using my Firebase config. Live version, the version on github is for testing and personal use._
+
+Many ways exist of storing references for art and photography, as well as storing documents. In many cases, it can be difficult to organize and put your things together for art projects or worldbuilding, and MuralDB is supposed to help with that issue. Using visually appealing boards, site organization, image storage and user data, ths site allows users to store all of their art related things in an organized place, while also being able to keep track of their priorities and recent work. Users can even see the boards of others, given their permission. There are also helpful tools for the creative process, alongside resource references to help you get started.
 
 ## :link: Repository URL
 - [Link](https://github.com/aSenghore/MuralDB)
@@ -16,7 +15,11 @@ There are numerous resources for storing references and finding them, as well as
 - TypeScript
 - [Node.js](https://nodejs.org/en/)
 - React
+- Clip Studio Paint
 - Figma
+- Firebase
+- Tailwind CSS
+- Vite
 
 ## :briefcase: Features (Fall 2025)
 1. **Home Page**
@@ -26,25 +29,33 @@ There are numerous resources for storing references and finding them, as well as
 2. **Gallery Pages**
     - Pages that store different galleries for users. Pages for references, created art/ photos, and uploaded documents.
     - Tags can be applied for categorization and organization.
-    - Pinning function to keep track on your most prioritized galleries.
-3. **Tags**
+3. **Pins**
+    - Normal pins allow you to prioritize up to 3 of your most important boards.
+    - Showcase pins allow you to choose which boards you want to share with others.
+4. **Tags**
     - Images and documents can be tagged for better organization site-wide
     - Tags are saved in a database, can be used to filter galleries.
     - Cam ne designed with pre-set colors, or a custom color throguh the color picker.
-4. **Database**
+5. **Database**
     - Stores images with login information, alongside documents, profile picture, and more.
-5. **Tools**
+    - Proper password rest function.
+6. **Tools**
     - A tools section dedicated to fun and helpful resources.
     - Character prompt generator, toggle-able parameters.
     - Color palette generator, generates five random colors and can generate ten random shades.
-    - Photo challenges in the works
-6. **Resources**
+    - More tools to come.
+7. **Resources**
     - Contains references to helpful resources for creatives.
     - Includes drawing tablets, sketchbooks, cameras, digital art software, and where to buy.
-7. **UI/UX**
+8. **UI/UX**
     - Smooth UI, closeable navigation.
     - Dark mode/ light mode toggle for users.
     - Seamless page switching.
+    - Tailwind allows for proper mobile CSS, though a bit rough.
+9. **Public Page**
+    - Public page, allows for the viewing of other users galleries.
+    - You can see and search through galleries that users have given showcase pins to.
+    - Galleries can be bookmarked, allowing for quick access to other boards.
 
 ## :floppy_disk: Installation Steps
 1. Download and extract
@@ -115,17 +126,32 @@ Figma was used to work on the basic UI, alongside some aspects for the site.
 
 ## :film_projector: Demo videos
 
-**Sprint 1 Demo Video** 
+**MuralDB Sprint Presentation #1** 
 
 [![Sprint 1 Demo Video](https://img.youtube.com/vi/u89HqNRJvvA/0.jpg)](https://www.youtube.com/watch?v=u89HqNRJvvA)
 
-**Sprint 2 Demo Video**
+**MuralDB Sprint Presentation #2**
 
 [![Sprint 2 Demo Video](https://img.youtube.com/vi/9PK2p9vNODg/0.jpg)](https://www.youtube.com/watch?v=9PK2p9vNODg)
 
-**Sprint 3 Demo Video**
+**MuralDB Sprint Presentation #3 (FINAL)**
 
 [![Sprint 3 Demo Video](https://img.youtube.com/vi/u_-RFdSCjTY/0.jpg)](https://www.youtube.com/watch?v=u_-RFdSCjTY)
+
+
+## :film_projector: Code videos
+
+**MuralDB Sprint Code Demo #1** 
+
+[![Sprint 1 Demo Video](https://img.youtube.com/vi/iZy3pBlo970/0.jpg)](https://www.youtube.com/watch?v=iZy3pBlo970)
+
+**MuralDB Sprint Code Demo #2**
+
+[![Sprint 2 Demo Video](https://img.youtube.com/vi/e1g6CSvozvI/0.jpg)](https://www.youtube.com/watch?v=e1g6CSvozvI)
+
+**MuralDB Sprint Code Demo #3 (FINAL)**
+
+[![Sprint 3 Demo Video](https://img.youtube.com/vi/-_h-ZUPFRi4/0.jpg)](https://www.youtube.com/watch?v=-_h-ZUPFRi4)
 
 
 
