@@ -207,18 +207,15 @@ export function PublicGalleriesPage({ user }: PublicGalleriesPageProps) {
                             <TabsList className="w-full grid grid-cols-3">
                                 <TabsTrigger value="references" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
                                     <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    <span className="hidden sm:inline">Reference Boards</span>
-                                    <span className="sm:hidden">Ref</span> ({filteredReferenceGalleries.length})
+                                    <span className="hidden sm:inline">Reference Boards</span>({filteredReferenceGalleries.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="art" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
                                     <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    <span className="hidden sm:inline">Art Boards</span>
-                                    <span className="sm:hidden">Art</span> ({filteredArtGalleries.length})
+                                    <span className="hidden sm:inline">Art Boards</span>({filteredArtGalleries.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="documents" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
                                     <Folder className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    <span className="hidden sm:inline">Document Boards</span>
-                                    <span className="sm:hidden">Docs</span> ({filteredFolders.length})
+                                    <span className="hidden sm:inline">Document Boards</span>({filteredFolders.length})
                                 </TabsTrigger>
                             </TabsList>
 
