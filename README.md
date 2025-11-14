@@ -56,7 +56,10 @@ Many ways exist of storing references for art and photography, as well as storin
     - Public page, allows for the viewing of other users galleries.
     - You can see and search through galleries that users have given showcase pins to.
     - Galleries can be bookmarked, allowing for quick access to other boards.
-- I do still need to make the dark mode toggle permanent, as opposed to temporary.
+10. **Known Issues**
+    - Still need to make the dark mode toggle permanent, as opposed to temporary.
+    - File names do not save after being changed.
+    - View Gallery in user information page does not work.
 
 ## :floppy_disk: Installation Steps
 1. Download and extract
@@ -117,7 +120,6 @@ firebase deploy --only hosting  --project "your project id (remove quotations)"
 
 2. Create and account or log in using an existing account.
     - After creating an account, you should be automatically signed in.
-    - Password reset is in the works.
 
 ## :space_invader: Team
 **Abdou Senghore** <br>
