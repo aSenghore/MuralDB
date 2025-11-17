@@ -9,6 +9,7 @@ Many ways exist of storing references for art and photography, as well as storin
 ## :link: Repository URL
 - [Repository Home](https://github.com/aSenghore/MuralDB)
 - [_Working site, using my Firebase config. Live version, the version on github is for testing and personal use._](https://muraldb-935aa.web.app/)
+- [User Manual](https://docs.google.com/document/d/1DKiqdOVq6gDO17Aar0uwVNxJNQq238uaYWK9mHM32JU/edit?usp=sharing)
 
 ## :computer: Technologies
 - JavaScript
